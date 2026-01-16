@@ -124,7 +124,10 @@ body {
   padding: 0;
   z-index: 5;
   max-width: 340px;
-  overflow: hidden;
+  width: min(340px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid rgba(253, 185, 19, 0.2);
   backdrop-filter: blur(10px);
 }
@@ -419,6 +422,31 @@ body {
 
 .fare-analysis-link:active {
   transform: translateY(-1px) scale(1.01);
+}
+
+@media (max-width: 768px) {
+  .controls {
+    left: 12px;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100vh - 24px);
+    border-radius: 14px;
+  }
+
+  .controls-header,
+  .control-summary,
+  .section-header,
+  .control-group,
+  .option-cards,
+  .layer-toggles {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .fare-analysis-link {
+    margin: 16px;
+  }
 }
 
 .route-list {

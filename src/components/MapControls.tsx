@@ -77,6 +77,8 @@ export default function MapControls({
     showShapes ? 'Recorridos' : null,
     showTourism ? 'Turismo' : null,
   ].filter(Boolean) as string[];
+  const densityLabel =
+    densityOptions.find((option) => option.value === densityLayer)?.label ?? 'Sin densidad';
 
   return (
     <div className="controls">
@@ -112,7 +114,7 @@ export default function MapControls({
         <div className="summary-block">
           <span className="summary-label">Densidad</span>
           <span className="summary-value">
-            {densityOptions.find((option) => option.value === densityLayer)?.label ?? 'Sin densidad'}
+            {densityLabel}
           </span>
           {isFrequencyMetric && selectedTimeSlot && (
             <span className="summary-caption">Franja: {selectedTimeSlot.label}</span>
