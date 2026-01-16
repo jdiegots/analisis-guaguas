@@ -209,44 +209,48 @@ export default function MapView() {
     }
   }, [densityLayer]);
 
-  const loadSections = async () => {
+  const fetchGeoJson = async (url: string, label: string) => {
     try {
-      const response = await fetch('/api/sections');
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.error(`Error loading ${label}:`, response.status, errorText);
+        return null;
+      }
+
       const data = await response.json();
-      setSectionsData(data);
+
+      if (!data || data.type !== 'FeatureCollection') {
+        console.error(`${label} response is not valid GeoJSON:`, data);
+        return null;
+      }
+
+      return data;
     } catch (error) {
-      console.error('Error loading sections:', error);
+      console.error(`Error loading ${label}:`, error);
+      return null;
     }
+  };
+
+  const loadSections = async () => {
+    const data = await fetchGeoJson('/api/sections', 'sections');
+    setSectionsData(data);
   };
 
   const loadStops = async () => {
-    try {
-      const response = await fetch('/api/stops');
-      const data = await response.json();
-      setStopsData(data);
-    } catch (error) {
-      console.error('Error loading stops:', error);
-    }
+    const data = await fetchGeoJson('/api/stops', 'stops');
+    setStopsData(data);
   };
 
   const loadGrid = async (type: string) => {
-    try {
-      const response = await fetch(`/api/grid?type=${type}`);
-      const data = await response.json();
-      setGridData(data);
-    } catch (error) {
-      console.error('Error loading grid:', error);
-    }
+    const data = await fetchGeoJson(`/api/grid?type=${type}`, 'grid');
+    setGridData(data);
   };
 
   const loadShapes = async () => {
-    try {
-      const response = await fetch('/api/shapes');
-      const data = await response.json();
-      setShapesData(data);
-    } catch (error) {
-      console.error('Error loading shapes:', error);
-    }
+    const data = await fetchGeoJson('/api/shapes', 'shapes');
+    setShapesData(data);
   };
 
   const getMetricKey = () => {
