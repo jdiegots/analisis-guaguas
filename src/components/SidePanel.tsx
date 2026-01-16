@@ -22,6 +22,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   indicator_elderly_desert: 'Índice normalizado que combina alta población mayor de 65 años con baja cobertura de paradas a 300m',
   indicator_unemployment_trap: 'Índice normalizado que combina alto desempleo con baja frecuencia de servicio público',
   indicator_education_gap: 'Índice normalizado que combina bajo nivel educativo con mala accesibilidad al transporte',
+  indicator_service_dependency: 'Índice normalizado que combina alta dependencia del empleo en servicios con baja frecuencia de guaguas',
 };
 
 export default function SidePanel({
@@ -131,14 +132,16 @@ export default function SidePanel({
             <div style={{ marginTop: '15px', padding: '15px', background: '#fff7e6', borderRadius: '8px' }}>
               <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>ℹ️ Alcance del análisis</h3>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
-                Este análisis no incluye datos de aforo, validaciones ni puntualidad porque Guaguas
-                Municipales y Las Palmas de Gran Canaria publican pocas o ninguna de estas mediciones en
-                abierto, y las disponibles no permiten un estudio detallado de la demanda real ni de la
-                calidad del servicio.
+                Este análisis excluye todo lo que tiene que ver con datos de aforo, validaciones o
+                puntualidad debido a que Guaguas Municipales y Las Palmas de Gran Canaria ofrece en abierto
+                pocas o ninguna de estas mediciones, y las que hay son pobres como para hacer un análisis
+                minucioso sobre las zonas donde falla, impidiendo medir la demanda real y la calidad del
+                viaje.
               </p>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5', marginTop: '10px' }}>
-                También se excluyen las secciones periféricas de Las Palmas de Gran Canaria que no cuentan
-                con líneas de Guaguas Municipales; en esas zonas el servicio lo presta Global.
+                Se excluye del análisis aquellas secciones de Las Palmas de Gran Canaria que no tienen
+                líneas cubiertas por Guaguas Municipales, que son las periféricas. Ahí sí que tienen
+                guaguas de Global.
               </p>
             </div>
           </div>
@@ -247,6 +250,17 @@ export default function SidePanel({
                 Bajo nivel formativo combinado con mala accesibilidad
               </div>
               <div className="formula">{METRIC_FORMULAS.indicator_education_gap}</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>Dependencia de Servicios</h3>
+              <div className="value">
+                {((sectionData.section.indicator_service_dependency || 0) * 100).toFixed(0)}%
+              </div>
+              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
+                Alto empleo en servicios combinado con baja frecuencia
+              </div>
+              <div className="formula">{METRIC_FORMULAS.indicator_service_dependency}</div>
             </div>
 
             <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>

@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         sm.indicator_education_gap,
         sm.indicator_unemployment_trap,
         sm.indicator_elderly_desert,
+        sm.indicator_service_dependency,
         sm.occ_services,
         sm.occ_construction,
         sm.occ_industry,
@@ -83,6 +84,7 @@ export async function GET(request: NextRequest) {
           indicator_education_gap: section.indicator_education_gap,
           indicator_unemployment_trap: section.indicator_unemployment_trap,
           indicator_elderly_desert: section.indicator_elderly_desert,
+          indicator_service_dependency: section.indicator_service_dependency,
           // Sectors
           occ_services: section.occ_services,
           occ_construction: section.occ_construction,
