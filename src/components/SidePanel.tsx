@@ -22,6 +22,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   indicator_elderly_desert: 'Índice normalizado que combina alta población mayor de 65 años con baja cobertura de paradas a 300m',
   indicator_unemployment_trap: 'Índice normalizado que combina alto desempleo con baja frecuencia de servicio público',
   indicator_education_gap: 'Índice normalizado que combina bajo nivel educativo con mala accesibilidad al transporte',
+  indicator_service_dependency: 'Índice normalizado que combina alta dependencia del empleo en servicios con baja frecuencia de guaguas',
 };
 
 export default function SidePanel({
@@ -234,6 +235,17 @@ export default function SidePanel({
                 Bajo nivel formativo combinado con mala accesibilidad
               </div>
               <div className="formula">{METRIC_FORMULAS.indicator_education_gap}</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>Dependencia de Servicios</h3>
+              <div className="value">
+                {((sectionData.section.indicator_service_dependency || 0) * 100).toFixed(0)}%
+              </div>
+              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
+                Alto empleo en servicios combinado con baja frecuencia
+              </div>
+              <div className="formula">{METRIC_FORMULAS.indicator_service_dependency}</div>
             </div>
 
             <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>

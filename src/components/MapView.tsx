@@ -46,15 +46,16 @@ const COLOR_SCALES = {
   indicator_elderly_desert: UNIFIED_BLUE_SCALE,
   indicator_unemployment_trap: UNIFIED_BLUE_SCALE,
   indicator_education_gap: UNIFIED_BLUE_SCALE,
+  indicator_service_dependency: UNIFIED_BLUE_SCALE,
 
   // Demographic context (0-1)
   prop_elderly: UNIFIED_BLUE_SCALE,
 
-  // Occupation sectors (absolute values)
-  occ_services: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 5000 })),
-  occ_construction: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 600 })),
-  occ_industry: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 600 })),
-  occ_agriculture: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 200 })),
+  // Occupation sectors (share of total employed, 0-1)
+  occ_services: UNIFIED_BLUE_SCALE,
+  occ_construction: UNIFIED_BLUE_SCALE,
+  occ_industry: UNIFIED_BLUE_SCALE,
+  occ_agriculture: UNIFIED_BLUE_SCALE,
 };
 
 interface TimeSlot {
@@ -95,6 +96,12 @@ const METRICS: Metric[] = [
     value: 'indicator_education_gap',
     label: 'Inequidad Educativa',
     formula: 'Zonas con bajo nivel formativo y mala accesibilidad',
+    group: 'Indicadores de desigualdad'
+  },
+  {
+    value: 'indicator_service_dependency',
+    label: 'Dependencia de Servicios',
+    formula: 'Zonas con alto empleo en servicios y baja frecuencia de guaguas',
     group: 'Indicadores de desigualdad'
   },
 
@@ -145,26 +152,26 @@ const METRICS: Metric[] = [
   },
   {
     value: 'occ_services',
-    label: 'Trabajadores en Servicios',
-    formula: 'Número absoluto de personas en sector servicios',
+    label: 'Empleo en Servicios',
+    formula: 'Proporción de empleo en el sector servicios',
     group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_construction',
-    label: 'Trabajadores en Construcción',
-    formula: 'Número absoluto de personas en construcción',
+    label: 'Empleo en Construcción',
+    formula: 'Proporción de empleo en construcción',
     group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_industry',
-    label: 'Trabajadores en Industria',
-    formula: 'Número absoluto de personas en industria',
+    label: 'Empleo en Industria',
+    formula: 'Proporción de empleo en industria',
     group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_agriculture',
-    label: 'Trabajadores en Agricultura',
-    formula: 'Número absoluto de personas en agricultura',
+    label: 'Empleo en Agricultura',
+    formula: 'Proporción de empleo en agricultura',
     group: 'Contexto sociodemográfico'
   },
 ];
