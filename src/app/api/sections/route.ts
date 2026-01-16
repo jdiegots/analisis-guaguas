@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
         sm.occ_agriculture
       FROM census_sections cs
       LEFT JOIN section_metrics sm ON cs.section_code = sm.section_code
+      WHERE COALESCE(sm.stops_count, 0) > 0
       ORDER BY cs.section_code
     `);
 

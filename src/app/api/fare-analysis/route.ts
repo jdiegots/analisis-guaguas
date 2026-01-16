@@ -73,6 +73,7 @@ const baseCte = `
       sm.stop_time_events_night
     FROM census_sections cs
     LEFT JOIN section_metrics sm ON cs.section_code = sm.section_code
+    WHERE COALESCE(sm.stops_count, 0) > 0
   )
 `;
 
