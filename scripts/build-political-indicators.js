@@ -18,7 +18,8 @@ async function main() {
       ADD COLUMN IF NOT EXISTS occ_services DOUBLE PRECISION,
       ADD COLUMN IF NOT EXISTS occ_construction DOUBLE PRECISION,
       ADD COLUMN IF NOT EXISTS occ_industry DOUBLE PRECISION,
-      ADD COLUMN IF NOT EXISTS occ_agriculture DOUBLE PRECISION
+      ADD COLUMN IF NOT EXISTS occ_agriculture DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS indicator_service_dependency DOUBLE PRECISION
     `);
     console.log('✓ Columns added\n');
 
@@ -36,7 +37,23 @@ async function main() {
         AVG(sm.coverage_300_area_pct) as avg_coverage,
         STDDEV(sm.coverage_300_area_pct) as std_coverage,
         AVG(sm.stop_time_events_all_day) as avg_frequency,
-        STDDEV(sm.stop_time_events_all_day) as std_frequency
+        STDDEV(sm.stop_time_events_all_day) as std_frequency,
+        AVG(
+          CASE
+            WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+            THEN cs.occ_services::double precision /
+              (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+            ELSE 0
+          END
+        ) as avg_services_share,
+        STDDEV(
+          CASE
+            WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+            THEN cs.occ_services::double precision /
+              (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+            ELSE 0
+          END
+        ) as std_services_share
       FROM census_sections cs
       LEFT JOIN section_metrics sm ON cs.section_code = sm.section_code
     `);
@@ -55,6 +72,8 @@ async function main() {
       std_coverage: parseFloat(statsRaw.std_coverage) || 0.01,
       avg_frequency: parseFloat(statsRaw.avg_frequency) || 0,
       std_frequency: parseFloat(statsRaw.std_frequency) || 0.01,
+      avg_services_share: parseFloat(statsRaw.avg_services_share) || 0,
+      std_services_share: parseFloat(statsRaw.std_services_share) || 0.01,
     };
 
     console.log('📊 Normalization statistics:');
@@ -63,6 +82,7 @@ async function main() {
     console.log(`  Avg low education: ${(stats.avg_low_education * 100).toFixed(1)}% (±${(stats.std_low_education * 100).toFixed(1)}%)`);
     console.log(`  Avg coverage 300m: ${stats.avg_coverage.toFixed(1)}% (±${stats.std_coverage.toFixed(1)}%)`);
     console.log(`  Avg daily frequency: ${stats.avg_frequency.toFixed(0)} (±${stats.std_frequency.toFixed(0)})\n`);
+    console.log(`  Avg services share: ${(stats.avg_services_share * 100).toFixed(1)}% (±${(stats.std_services_share * 100).toFixed(1)}%)\n`);
 
     // Build political indicators using z-scores
     console.log('Calculating political indicators...');
@@ -73,10 +93,30 @@ async function main() {
         -- Copy demographic data for visualization (valores absolutos)
         prop_elderly = cs.prop_elderly,
         income_median = NULL, -- No tenemos datos de renta por sección
-        occ_services = CAST(cs.occ_services AS DOUBLE PRECISION),
-        occ_construction = CAST(cs.occ_construction AS DOUBLE PRECISION),
-        occ_industry = CAST(cs.occ_industry AS DOUBLE PRECISION),
-        occ_agriculture = CAST(cs.occ_agriculture AS DOUBLE PRECISION),
+        occ_services = CASE
+          WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+          THEN cs.occ_services::double precision /
+               (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+          ELSE 0
+        END,
+        occ_construction = CASE
+          WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+          THEN cs.occ_construction::double precision /
+               (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+          ELSE 0
+        END,
+        occ_industry = CASE
+          WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+          THEN cs.occ_industry::double precision /
+               (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+          ELSE 0
+        END,
+        occ_agriculture = CASE
+          WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+          THEN cs.occ_agriculture::double precision /
+               (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+          ELSE 0
+        END,
 
         -- 1. DESIERTO PARA MAYORES
         -- Alta proporción de mayores (z > 0.5) + Baja cobertura 300m (z < -0.5)
@@ -132,7 +172,30 @@ async function main() {
           ) / 2
         )),
 
-        -- 4. CLASE TRABAJADORA (para contexto)
+        -- 4. DEPENDENCIA DE SERVICIOS
+        -- Alta proporción de empleo en servicios + Baja frecuencia de guaguas
+        indicator_service_dependency = GREATEST(0, LEAST(1,
+          (
+            CASE WHEN ${stats.std_services_share} > 0
+              THEN (((
+                CASE
+                  WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
+                  THEN cs.occ_services::double precision /
+                       (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services)
+                  ELSE 0
+                END
+              ) - ${stats.avg_services_share}) / ${stats.std_services_share} + 3) / 6
+              ELSE 0.5
+            END
+            +
+            CASE WHEN ${stats.std_frequency} > 0
+              THEN (-(sm.stop_time_events_all_day - ${stats.avg_frequency}) / ${stats.std_frequency} + 3) / 6
+              ELSE 0.5
+            END
+          ) / 2
+        )),
+
+        -- 5. CLASE TRABAJADORA (para contexto)
         -- Mayor proporción en agricultura + industria + construcción
         indicator_working_class = CASE
           WHEN (cs.occ_agriculture + cs.occ_industry + cs.occ_construction + cs.occ_services) > 0
