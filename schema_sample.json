@@ -1,0 +1,91 @@
+{
+  "COD": "ADRH93529",
+  "Nombre": "Agaete. Dato base. Renta neta media por persona. ",
+  "T3_Unidad": "Euros",
+  "T3_Escala": " ",
+  "MetaData": [
+    {
+      "Id": 1426,
+      "T3_Variable": "Municipios",
+      "Nombre": "Agaete",
+      "Codigo": "35001"
+    },
+    {
+      "Id": 72,
+      "T3_Variable": "Tipo de dato",
+      "Nombre": "Dato base",
+      "Codigo": ""
+    },
+    {
+      "Id": 284048,
+      "T3_Variable": "SALDOS CONTABLES",
+      "Nombre": "Renta neta media por persona",
+      "Codigo": ""
+    }
+  ],
+  "Data": [
+    {
+      "Fecha": "2023-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2023,
+      "Valor": 14183
+    },
+    {
+      "Fecha": "2022-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2022,
+      "Valor": 13088
+    },
+    {
+      "Fecha": "2021-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2021,
+      "Valor": 11965
+    },
+    {
+      "Fecha": "2020-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2020,
+      "Valor": 11311
+    },
+    {
+      "Fecha": "2019-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2019,
+      "Valor": 11401
+    },
+    {
+      "Fecha": "2018-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2018,
+      "Valor": 10740
+    },
+    {
+      "Fecha": "2017-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2017,
+      "Valor": 10156
+    },
+    {
+      "Fecha": "2016-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2016,
+      "Valor": 9691
+    },
+    {
+      "Fecha": "2015-01-01T00:00:00.000+01:00",
+      "T3_TipoDato": "Definitivo",
+      "T3_Periodo": "A",
+      "Anyo": 2015,
+      "Valor": 9398
+    }
+  ]
+}

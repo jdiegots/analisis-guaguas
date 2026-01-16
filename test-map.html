@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Test - Guaguas Municipales Map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            max-width: 300px;
+        }
+        #status {
+            margin-top: 10px;
+            padding: 5px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .loading { color: blue; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="info">
+    <h3>Test Map - Secciones Censales</h3>
+    <div id="status" class="loading">Cargando datos...</div>
+    <div id="details"></div>
+</div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiamRpZWdvdHMiLCJhIjoiY21rZzRieWwxMDQxMDNmcXltdnVqdjJtciJ9.dDohU0RU8f42m79cJ08puQ';
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [-15.43, 28.12],
+    zoom: 12
+});
+
+const statusDiv = document.getElementById('status');
+const detailsDiv = document.getElementById('details');
+
+map.on('load', async () => {
+    try {
+        statusDiv.textContent = 'Conectando a base de datos...';
+
+        // Load sections directly from database via node script
+        const response = await fetch('http://localhost:3000/api/test');
+        const data = await response.json();
+
+        if (data.sample_sections && data.sample_sections.length > 0) {
+            statusDiv.className = 'success';
+            statusDiv.textContent = `✓ ${data.stats.census_sections} secciones censales encontradas`;
+
+            detailsDiv.innerHTML = `
+                <p><strong>PostGIS:</strong> ${data.postgis_available ? '✓ v' + data.postgis_version : '✗ No disponible'}</p>
+                <p><strong>Paradas:</strong> ${data.stats.stops}</p>
+                <p><strong>Rutas:</strong> ${data.stats.routes}</p>
+                <p><strong>Viajes:</strong> ${data.stats.trips}</p>
+            `;
+
+            // Create a simple GeoJSON from sample sections
+            const section = data.sample_sections[0];
+            const geojson = {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [
+                        parseFloat(section.lon || section.longitude || -15.43),
+                        parseFloat(section.lat || section.latitude || 28.12)
+                    ]
+                },
+                properties: {
+                    section_code: section.section_code
+                }
+            };
+
+            // Add a test marker
+            new mapboxgl.Marker({ color: 'red' })
+                .setLngLat(geojson.geometry.coordinates)
+                .setPopup(new mapboxgl.Popup().setHTML(`<strong>Sección:</strong> ${section.section_code}`))
+                .addTo(map);
+
+            map.flyTo({
+                center: geojson.geometry.coordinates,
+                zoom: 14
+            });
+
+        } else {
+            statusDiv.className = 'error';
+            statusDiv.textContent = '✗ No se encontraron secciones censales';
+        }
+
+    } catch (error) {
+        statusDiv.className = 'error';
+        statusDiv.textContent = '✗ Error: ' + error.message;
+        console.error('Error loading data:', error);
+    }
+});
+</script>
+</body>
+</html>
