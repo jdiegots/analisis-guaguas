@@ -1,7 +1,5 @@
 'use client';
-
 import { useEffect, useState } from 'react';
-
 interface SidePanelProps {
   selectedSection: string | null;
   selectedStop: string | null;
@@ -10,7 +8,6 @@ interface SidePanelProps {
   isCollapsed: boolean;
   onClose: () => void;
 }
-
 const METRIC_FORMULAS: Record<string, string> = {
   stops_count: 'Fórmula: COUNT(stops) WHERE ST_Within(stop.geom, section.geom)\nTablas: stops, census_sections',
   stops_per_km2: 'Fórmula: stops_count / area_km2\nTablas: section_metrics, census_sections',
@@ -22,9 +19,7 @@ const METRIC_FORMULAS: Record<string, string> = {
   indicator_elderly_desert: 'Índice normalizado que combina alta población mayor de 65 años con baja cobertura de paradas a 300m',
   indicator_unemployment_trap: 'Índice normalizado que combina alto desempleo con baja frecuencia de servicio público',
   indicator_education_gap: 'Índice normalizado que combina bajo nivel educativo con mala accesibilidad al transporte',
-  indicator_service_dependency: 'Índice normalizado que combina alta dependencia del empleo en servicios con baja frecuencia de guaguas',
 };
-
 export default function SidePanel({
   selectedSection,
   selectedStop,
@@ -36,7 +31,6 @@ export default function SidePanel({
   const [sectionData, setSectionData] = useState<any>(null);
   const [stopData, setStopData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     if (selectedSection) {
       loadSectionData(selectedSection);
@@ -44,7 +38,6 @@ export default function SidePanel({
       setSectionData(null);
     }
   }, [selectedSection]);
-
   useEffect(() => {
     if (selectedStop) {
       loadStopData(selectedStop);
@@ -52,7 +45,6 @@ export default function SidePanel({
       setStopData(null);
     }
   }, [selectedStop]);
-
   const loadSectionData = async (code: string) => {
     setLoading(true);
     try {
@@ -65,7 +57,6 @@ export default function SidePanel({
       setLoading(false);
     }
   };
-
   const loadStopData = async (id: string) => {
     setLoading(true);
     try {
@@ -78,7 +69,6 @@ export default function SidePanel({
       setLoading(false);
     }
   };
-
   const getTimeSlotLabel = () => {
     const labels: Record<string, string> = {
       all_day: 'Todo el día',
@@ -89,7 +79,6 @@ export default function SidePanel({
     };
     return labels[timeSlot] || timeSlot;
   };
-
   const getMetricValue = (section: any, metricKey: string, slot: string) => {
     if (metricKey === 'stop_time_events_all_day' || metricKey === 'unique_routes_all_day') {
       const suffix = slot === 'all_day' ? '_all_day' : `_${slot}`;
@@ -98,11 +87,9 @@ export default function SidePanel({
     }
     return section[metricKey];
   };
-
   if (isCollapsed) {
     return null;
   }
-
   return (
     <div className={`side-panel ${isCollapsed ? 'collapsed' : ''}`}>
       {loading && (
@@ -110,7 +97,6 @@ export default function SidePanel({
           <p>Cargando...</p>
         </div>
       )}
-
       {!loading && !selectedSection && !selectedStop && (
         <div>
           <div className="panel-header">
@@ -132,22 +118,19 @@ export default function SidePanel({
             <div style={{ marginTop: '15px', padding: '15px', background: '#fff7e6', borderRadius: '8px' }}>
               <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>ℹ️ Alcance del análisis</h3>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
-                Este análisis excluye todo lo que tiene que ver con datos de aforo, validaciones o
-                puntualidad debido a que Guaguas Municipales y Las Palmas de Gran Canaria ofrece en abierto
-                pocas o ninguna de estas mediciones, y las que hay son pobres como para hacer un análisis
-                minucioso sobre las zonas donde falla, impidiendo medir la demanda real y la calidad del
-                viaje.
+                Este análisis no incluye datos de aforo, validaciones ni puntualidad porque Guaguas
+                Municipales y Las Palmas de Gran Canaria publican pocas o ninguna de estas mediciones en
+                abierto, y las disponibles no permiten un estudio detallado de la demanda real ni de la
+                calidad del servicio.
               </p>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5', marginTop: '10px' }}>
-                Se excluye del análisis aquellas secciones de Las Palmas de Gran Canaria que no tienen
-                líneas cubiertas por Guaguas Municipales, que son las periféricas. Ahí sí que tienen
-                guaguas de Global.
+                También se excluyen las secciones periféricas de Las Palmas de Gran Canaria que no cuentan
+                con líneas de Guaguas Municipales; en esas zonas el servicio lo presta Global.
               </p>
             </div>
           </div>
         </div>
       )}
-
       {!loading && sectionData && (
         <div>
           <div className="panel-header">
@@ -161,22 +144,18 @@ export default function SidePanel({
                 {sectionData.section.name || 'Sin nombre'}
               </div>
             </div>
-
             <div className="metric-card">
               <h3>Área</h3>
               <div className="value">{sectionData.section.area_km2?.toFixed(3)} km²</div>
             </div>
-
             <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
               Métricas Básicas
             </h3>
-
             <div className="metric-card">
               <h3>Paradas en la Sección</h3>
               <div className="value">{sectionData.section.stops_count || 0}</div>
               <div className="formula">{METRIC_FORMULAS.stops_count}</div>
             </div>
-
             <div className="metric-card">
               <h3>Densidad de Paradas</h3>
               <div className="value">
@@ -184,7 +163,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.stops_per_km2}</div>
             </div>
-
             <div className="metric-card">
               <h3>Parada Más Cercana</h3>
               <div className="value">
@@ -195,7 +173,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.nearest_stop_meters}</div>
             </div>
-
             <div className="metric-card">
               <h3>Cobertura 300m</h3>
               <div className="value">
@@ -203,7 +180,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.coverage_300_area_pct}</div>
             </div>
-
             <div className="metric-card">
               <h3>Cobertura 500m</h3>
               <div className="value">
@@ -211,14 +187,12 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.coverage_500_area_pct}</div>
             </div>
-
             <h3 style={{ marginTop: '25px', marginBottom: '15px', color: '#2c3e50', borderBottom: '2px solid #FDB913', paddingBottom: '8px' }}>
               Indicadores de Desigualdad
             </h3>
             <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px', lineHeight: '1.5' }}>
               Índices que combinan variables socioeconómicas con accesibilidad al transporte público.
             </div>
-
             <div className="metric-card">
               <h3>Exclusión Laboral</h3>
               <div className="value">
@@ -229,7 +203,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.indicator_unemployment_trap}</div>
             </div>
-
             <div className="metric-card">
               <h3>Aislamiento de Población Mayor</h3>
               <div className="value">
@@ -240,7 +213,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.indicator_elderly_desert}</div>
             </div>
-
             <div className="metric-card">
               <h3>Inequidad Educativa</h3>
               <div className="value">
@@ -251,22 +223,9 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.indicator_education_gap}</div>
             </div>
-
-            <div className="metric-card">
-              <h3>Dependencia de Servicios</h3>
-              <div className="value">
-                {((sectionData.section.indicator_service_dependency || 0) * 100).toFixed(0)}%
-              </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
-                Alto empleo en servicios combinado con baja frecuencia
-              </div>
-              <div className="formula">{METRIC_FORMULAS.indicator_service_dependency}</div>
-            </div>
-
             <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
               Servicio: {getTimeSlotLabel()}
             </h3>
-
             <div className="metric-card">
               <h3>Eventos de Servicio</h3>
               <div className="value">
@@ -274,7 +233,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.stop_time_events}</div>
             </div>
-
             <div className="metric-card">
               <h3>Líneas Únicas</h3>
               <div className="value">
@@ -282,7 +240,6 @@ export default function SidePanel({
               </div>
               <div className="formula">{METRIC_FORMULAS.unique_routes}</div>
             </div>
-
             {sectionData.topRoutes[timeSlot] && sectionData.topRoutes[timeSlot].length > 0 && (
               <>
                 <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
@@ -301,7 +258,6 @@ export default function SidePanel({
                 </ul>
               </>
             )}
-
             {sectionData.stops && sectionData.stops.length > 0 && (
               <>
                 <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
@@ -319,7 +275,6 @@ export default function SidePanel({
           </div>
         </div>
       )}
-
       {!loading && stopData && (
         <div>
           <div className="panel-header">
@@ -331,7 +286,6 @@ export default function SidePanel({
               <h3>ID de Parada</h3>
               <div className="value" style={{ fontSize: '1.2rem' }}>{stopData.stop.stop_id}</div>
             </div>
-
             {stopData.stop.section_name && (
               <div className="metric-card">
                 <h3>Sección Censal</h3>
@@ -343,7 +297,6 @@ export default function SidePanel({
                 </div>
               </div>
             )}
-
             <div className="metric-card">
               <h3>Coordenadas</h3>
               <div style={{ fontSize: '0.9rem', color: '#555' }}>
@@ -352,7 +305,6 @@ export default function SidePanel({
                 Lon: {stopData.stop.stop_lon?.toFixed(6)}
               </div>
             </div>
-
             {stopData.routes && stopData.routes.length > 0 && (
               <>
                 <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
@@ -371,7 +323,6 @@ export default function SidePanel({
                 </ul>
               </>
             )}
-
             {stopData.stopTimes && stopData.stopTimes.length > 0 && (
               <>
                 <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
