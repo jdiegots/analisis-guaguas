@@ -128,6 +128,19 @@ export default function SidePanel({
                 Cada métrica tiene una fórmula transparente y verificable.
               </p>
             </div>
+            <div style={{ marginTop: '15px', padding: '15px', background: '#fff7e6', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>ℹ️ Alcance del análisis</h3>
+              <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
+                Este análisis no incluye datos de aforo, validaciones ni puntualidad porque Guaguas
+                Municipales y Las Palmas de Gran Canaria publican pocas o ninguna de estas mediciones en
+                abierto, y las disponibles no permiten un estudio detallado de la demanda real ni de la
+                calidad del servicio.
+              </p>
+              <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5', marginTop: '10px' }}>
+                También se excluyen las secciones periféricas de Las Palmas de Gran Canaria que no cuentan
+                con líneas de Guaguas Municipales; en esas zonas el servicio lo presta Global.
+              </p>
+            </div>
           </div>
         </div>
       )}
