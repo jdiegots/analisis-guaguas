@@ -15,25 +15,99 @@ interface Fare {
   is_social_fare: boolean;
 }
 
-interface SocioeconomicStats {
+interface FareAnalysisSummary {
   avg_unemployment: number;
   avg_elderly_prop: number;
   avg_low_education: number;
-  sections_high_unemployment: number;
-  sections_high_elderly: number;
-  sections_poor_coverage: number;
+  avg_working_class: number;
+  avg_services_share: number;
   total_sections: number;
-  // Bus Metrics
+  median_coverage_300: number;
+  median_nearest_stop: number;
+}
+
+interface FareAnalysisBus {
+  avg_stops_count: number;
   avg_stops_density: number;
   avg_nearest_stop_dist: number;
   avg_coverage_300: number;
+  avg_coverage_500: number;
   avg_freq_day: number;
   avg_freq_morning: number;
+  avg_freq_midday: number;
+  avg_freq_afternoon: number;
+  avg_freq_night: number;
 }
+
+interface FareAnalysisContrast {
+  key: string;
+  label: string;
+  unit: '%' | 'ratio';
+  description: string;
+  thresholds: {
+    p25: number;
+    p75: number;
+  };
+  sections: {
+    high: number;
+    low: number;
+  };
+  averages: {
+    high_value: number;
+    low_value: number;
+    high_coverage_300: number;
+    low_coverage_300: number;
+    high_coverage_500: number;
+    low_coverage_500: number;
+    high_nearest_stop: number;
+    low_nearest_stop: number;
+    high_stops_count: number;
+    low_stops_count: number;
+    high_stops_density: number;
+    low_stops_density: number;
+    high_freq_day: number;
+    low_freq_day: number;
+    high_penalty: number;
+    low_penalty: number;
+  };
+  gaps: {
+    coverage_300: number;
+    coverage_500: number;
+    nearest_stop: number;
+    stops_density: number;
+    stops_count: number;
+    freq_day: number;
+    penalty_index: number;
+  };
+  correlations: {
+    coverage_300: number;
+    coverage_500: number;
+    nearest_stop: number;
+    stops_density: number;
+    freq_day: number;
+  };
+}
+
+interface FareAnalysisStats {
+  summary: FareAnalysisSummary;
+  bus: FareAnalysisBus;
+  contrasts: FareAnalysisContrast[];
+}
+
+const formatPercent = (value: number, digits = 1) => `${(value * 100).toFixed(digits)}%`;
+const formatCoverage = (value: number) => `${value.toFixed(1)}%`;
+const formatNumber = (value: number, digits = 1) => value.toFixed(digits);
+
+const formatMetricValue = (value: number, unit: '%' | 'ratio') => {
+  if (unit === '%') {
+    return formatPercent(value);
+  }
+  return formatNumber(value, 2);
+};
 
 export default function AnalisisTarifas() {
   const [fares, setFares] = useState<Fare[]>([]);
-  const [stats, setStats] = useState<SocioeconomicStats | null>(null);
+  const [stats, setStats] = useState<FareAnalysisStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,12 +116,10 @@ export default function AnalisisTarifas() {
 
   const loadData = async () => {
     try {
-      // Load fares
       const faresRes = await fetch('/api/fares');
       const faresData = await faresRes.json();
       setFares(faresData);
 
-      // Load socioeconomic stats
       const statsRes = await fetch('/api/fare-analysis');
       const statsData = await statsRes.json();
       setStats(statsData);
@@ -63,7 +135,6 @@ export default function AnalisisTarifas() {
     return <div className="loading">Cargando análisis de tarifas...</div>;
   }
 
-  // Group fares by target
   const faresByTarget = fares.reduce((acc, fare) => {
     if (!acc[fare.target_group]) acc[fare.target_group] = [];
     acc[fare.target_group].push(fare);
@@ -82,7 +153,6 @@ export default function AnalisisTarifas() {
     elderly_low_income: 'Mayores 65+ / Renta Baja'
   };
 
-  // Calculate average costs
   const avgCostGeneral = faresByTarget.general
     ?.filter(f => f.cost_per_trip)
     .reduce((sum, f) => sum + (f.cost_per_trip || 0), 0) / faresByTarget.general?.filter(f => f.cost_per_trip).length || 0;
@@ -100,7 +170,6 @@ export default function AnalisisTarifas() {
       </header>
 
       <div className="content">
-        {/* Executive Summary */}
         <section className="card">
           <h2>Resumen Ejecutivo</h2>
           <div className="summary-grid">
@@ -123,65 +192,149 @@ export default function AnalisisTarifas() {
           </div>
         </section>
 
-        {/* Socioeconomic Context */}
         {stats && (
           <>
             <section className="card critical">
-              <h2>Contexto Socioeconómico de Las Palmas de Gran Canaria</h2>
+              <h2>Contexto Socioeconómico (promedios municipales)</h2>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <div className="stat-value">{(stats.avg_unemployment * 100).toFixed(1)}%</div>
-                  <div className="stat-label">Tasa de desempleo media</div>
-                  <div className="stat-detail">{stats.sections_high_unemployment} secciones con desempleo &gt;25%</div>
+                  <div className="stat-value">{formatPercent(stats.summary.avg_unemployment)}</div>
+                  <div className="stat-label">Tasa media de desempleo</div>
+                  <div className="stat-detail">Secciones analizadas: {stats.summary.total_sections}</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value">{(stats.avg_elderly_prop * 100).toFixed(1)}%</div>
+                  <div className="stat-value">{formatPercent(stats.summary.avg_elderly_prop)}</div>
                   <div className="stat-label">Población mayor de 65 años</div>
-                  <div className="stat-detail">{stats.sections_high_elderly} secciones con &gt;25% mayores</div>
+                  <div className="stat-detail">Presión de envejecimiento en la demanda</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value">{(stats.avg_low_education * 100).toFixed(1)}%</div>
-                  <div className="stat-label">Población con educación básica</div>
+                  <div className="stat-value">{formatPercent(stats.summary.avg_low_education)}</div>
+                  <div className="stat-label">Baja formación</div>
                   <div className="stat-detail">Primaria + Secundaria 1ª etapa</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value">{stats.sections_poor_coverage}</div>
-                  <div className="stat-label">Secciones con cobertura &lt;50%</div>
-                  <div className="stat-detail">De {stats.total_sections} secciones totales</div>
+                  <div className="stat-value">{formatPercent(stats.summary.avg_working_class)}</div>
+                  <div className="stat-label">Clase trabajadora</div>
+                  <div className="stat-detail">Agricultura + industria + construcción</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatPercent(stats.summary.avg_services_share)}</div>
+                  <div className="stat-label">Empleo en servicios</div>
+                  <div className="stat-detail">Dependencia de sectores terciarios</div>
                 </div>
               </div>
             </section>
 
-            {/* Service Quality Indicators */}
             <section className="card">
-              <h2>Indicadores de Calidad del Servicio</h2>
+              <h2>Oferta de Guaguas (todas las métricas)</h2>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <div className="stat-value">{stats.avg_coverage_300.toFixed(1)}%</div>
-                  <div className="stat-label">Cobertura a 300m</div>
-                  <div className="stat-detail">Área urbana cubierta por paradas</div>
+                  <div className="stat-value">{formatNumber(stats.bus.avg_stops_count, 0)}</div>
+                  <div className="stat-label">Paradas por sección</div>
+                  <div className="stat-detail">Conteo promedio dentro de la sección</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value">{stats.avg_nearest_stop_dist.toFixed(0)}m</div>
-                  <div className="stat-label">Distancia media a parada</div>
-                  <div className="stat-detail">Accesibilidad peatonal promedio</div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-value">{stats.avg_stops_density.toFixed(1)}</div>
+                  <div className="stat-value">{formatNumber(stats.bus.avg_stops_density, 1)}</div>
                   <div className="stat-label">Paradas por km²</div>
-                  <div className="stat-detail">Densidad de la red</div>
+                  <div className="stat-detail">Densidad física de la red</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value">{stats.avg_freq_morning.toFixed(0)}</div>
-                  <div className="stat-label">Frecuencia Matutina</div>
-                  <div className="stat-detail">Eventos promedio (06:00-10:00)</div>
+                  <div className="stat-value">{formatNumber(stats.bus.avg_nearest_stop_dist, 0)}m</div>
+                  <div className="stat-label">Parada más cercana</div>
+                  <div className="stat-detail">Mediana: {formatNumber(stats.summary.median_nearest_stop, 0)}m</div>
                 </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatCoverage(stats.bus.avg_coverage_300)}</div>
+                  <div className="stat-label">Cobertura 300m</div>
+                  <div className="stat-detail">Mediana: {formatCoverage(stats.summary.median_coverage_300)}</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatCoverage(stats.bus.avg_coverage_500)}</div>
+                  <div className="stat-label">Cobertura 500m</div>
+                  <div className="stat-detail">Acceso caminable extendido</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatNumber(stats.bus.avg_freq_day, 0)}</div>
+                  <div className="stat-label">Frecuencia diaria</div>
+                  <div className="stat-detail">Eventos en paradas (todo el día)</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatNumber(stats.bus.avg_freq_morning, 0)}</div>
+                  <div className="stat-label">Frecuencia mañana</div>
+                  <div className="stat-detail">06:00-10:00</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatNumber(stats.bus.avg_freq_midday, 0)}</div>
+                  <div className="stat-label">Frecuencia mediodía</div>
+                  <div className="stat-detail">12:00-16:00</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatNumber(stats.bus.avg_freq_afternoon, 0)}</div>
+                  <div className="stat-label">Frecuencia tarde</div>
+                  <div className="stat-detail">16:00-20:00</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-value">{formatNumber(stats.bus.avg_freq_night, 0)}</div>
+                  <div className="stat-label">Frecuencia noche</div>
+                  <div className="stat-detail">20:00-24:00</div>
+                </div>
+              </div>
+            </section>
+
+            <section className="card">
+              <h2>Indicadores avanzados: brechas socioeconómicas vs guaguas</h2>
+              <p>
+                Se comparan las secciones del cuartil alto (P75) frente al cuartil bajo (P25) de cada indicador.
+                La brecha positiva en cobertura implica mejor servicio en el cuartil alto; la brecha positiva
+                en distancia a parada indica peor acceso.
+              </p>
+              <div className="stats-grid">
+                {stats.contrasts.map(metric => (
+                  <div key={metric.key} className="stat-box">
+                    <div className="stat-value">{metric.label}</div>
+                    <div className="stat-label">{metric.description}</div>
+                    <div className="stat-detail">
+                      P25: {formatMetricValue(metric.thresholds.p25, metric.unit)} · P75: {formatMetricValue(metric.thresholds.p75, metric.unit)}
+                    </div>
+                    <div className="stat-detail">
+                      Secciones: {metric.sections.low} (bajo) / {metric.sections.high} (alto)
+                    </div>
+                    <div className="stat-detail">
+                      Cobertura 300m: {formatCoverage(metric.averages.low_coverage_300)} → {formatCoverage(metric.averages.high_coverage_300)}
+                    </div>
+                    <div className="stat-detail">
+                      Cobertura 500m: {formatCoverage(metric.averages.low_coverage_500)} → {formatCoverage(metric.averages.high_coverage_500)}
+                    </div>
+                    <div className="stat-detail">
+                      Parada más cercana: {formatNumber(metric.averages.low_nearest_stop, 0)}m → {formatNumber(metric.averages.high_nearest_stop, 0)}m
+                    </div>
+                    <div className="stat-detail">
+                      Paradas/km²: {formatNumber(metric.averages.low_stops_density, 1)} → {formatNumber(metric.averages.high_stops_density, 1)}
+                    </div>
+                    <div className="stat-detail">
+                      Frecuencia diaria: {formatNumber(metric.averages.low_freq_day, 0)} → {formatNumber(metric.averages.high_freq_day, 0)}
+                    </div>
+                    <div className="stat-detail">
+                      Índice penalización guagua: {formatNumber(metric.averages.low_penalty, 2)} → {formatNumber(metric.averages.high_penalty, 2)}
+                    </div>
+                    <div className="stat-detail">
+                      Brecha cobertura 300m: {formatCoverage(metric.gaps.coverage_300)} · Brecha distancia: {formatNumber(metric.gaps.nearest_stop, 0)}m
+                    </div>
+                    <div className="stat-detail">
+                      Corr(guagua, {metric.label.toLowerCase()}):
+                      {' '}Cob300 {formatNumber(metric.correlations.coverage_300, 2)},
+                      {' '}Cob500 {formatNumber(metric.correlations.coverage_500, 2)},
+                      {' '}Dist {formatNumber(metric.correlations.nearest_stop, 2)},
+                      {' '}Dens {formatNumber(metric.correlations.stops_density, 2)},
+                      {' '}Freq {formatNumber(metric.correlations.freq_day, 2)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </>
         )}
 
-        {/* Fare Analysis by Target Group */}
         <section className="card">
           <h2>Análisis de Tarifas por Grupo Objetivo</h2>
 
@@ -230,127 +383,66 @@ export default function AnalisisTarifas() {
           })}
         </section>
 
-        {/* Critical Analysis */}
-        <section className="card critical">
-          <h2>Análisis Crítico: Barreras de Acceso</h2>
-
-          <div className="analysis-section">
-            <h3>1. Desempleo y Acceso al Bono Solidario</h3>
-            <div className="analysis-content">
-              <div className="problem">
-                <strong>Problema:</strong> El Bono Solidario (€5/mes, 40 viajes) requiere estar desempleado 6+ meses ininterrumpidos.
-              </div>
-              <div className="impact">
-                <strong>Impacto:</strong> Con {stats && (stats.avg_unemployment * 100).toFixed(1)}% de desempleo medio y {stats?.sections_high_unemployment} secciones con &gt;25% desempleo,
-                muchas personas en búsqueda activa de empleo quedan excluidas si no cumplen los 6 meses.
-              </div>
-              <div className="inequity">
-                <strong>Inequidad:</strong> Las personas desempleadas que no califican pagan €0.42-1.40/viaje (tarifa general),
-                hasta <strong>{((0.42 / 0.125 - 1) * 100).toFixed(0)}% más caro</strong> que el Bono Solidario.
-              </div>
+        <section className="card">
+          <h2>Conclusiones Principales</h2>
+          <div className="conclusions">
+            <div className="conclusion">
+              <h3>1. Contraste social obligatorio</h3>
+              <p>
+                El análisis ahora cruza cada indicador socioeconómico con métricas concretas de guaguas
+                (paradas, densidad, cobertura 300m/500m, parada más cercana y frecuencia horaria).
+                Así se puede medir si las tarifas sociales se aplican donde la oferta es peor.
+              </p>
             </div>
-          </div>
-
-          <div className="analysis-section">
-            <h3>2. Población Mayor y Barreras de Renta</h3>
-            <div className="analysis-content">
-              <div className="problem">
-                <strong>Problema:</strong> El Bono Jubilado (gratuito) requiere renta familiar &lt;€1,256.60/mes (€17,592/año).
-              </div>
-              <div className="impact">
-                <strong>Impacto:</strong> Con {stats && (stats.avg_elderly_prop * 100).toFixed(1)}% de población 65+ y {stats?.sections_high_elderly} secciones con concentración alta,
-                muchos mayores con pensiones modestas pero superiores al umbral quedan excluidos.
-              </div>
-              <div className="inequity">
-                <strong>Inequidad:</strong> Mayores que no califican deben usar Bono Oro (€10/90 días) o tarifa general.
-                Si no hacen 30 viajes/90 días, pagan la recarga completa.
-              </div>
+            <div className="conclusion">
+              <h3>2. Brechas territoriales cuantificadas</h3>
+              <p>
+                Las brechas P75 vs P25 muestran si las zonas más vulnerables reciben menos cobertura o
+                mayores distancias a paradas. La correlación resume el sesgo estructural entre renta social
+                y acceso real a la guagua.
+              </p>
             </div>
-          </div>
-
-          <div className="analysis-section">
-            <h3>3. Estudiantes y Edad Límite</h3>
-            <div className="analysis-content">
-              <div className="problem">
-                <strong>Problema:</strong> Bono Estudiante (€14/mes, 80 viajes) solo para menores de 26 años al 1 de enero del curso.
-              </div>
-              <div className="impact">
-                <strong>Impacto:</strong> Estudiantes mayores de 26 años (másteres, segundos grados, FP superior) pagan tarifa general.
-              </div>
-              <div className="inequity">
-                <strong>Inequidad:</strong> Coste €0.175/viaje (estudiante) vs €0.42/viaje (general) = <strong>+140% más caro</strong>.
-              </div>
-            </div>
-          </div>
-
-          <div className="analysis-section">
-            <h3>4. Zonas con Pobre Cobertura y Alta Vulnerabilidad</h3>
-            <div className="analysis-content">
-              <div className="problem">
-                <strong>Problema:</strong> {stats?.sections_poor_coverage} secciones tienen cobertura &lt;50%, muchas con alta vulnerabilidad socioeconómica.
-              </div>
-              <div className="impact">
-                <strong>Impacto:</strong> Residentes deben caminar largas distancias o usar múltiples transbordos, reduciendo el valor de bonos limitados.
-              </div>
-              <div className="inequity">
-                <strong>Inequidad:</strong> Las tarifas sociales no compensan la mala cobertura. Pagar menos por viaje no ayuda si no hay servicio cercano.
-              </div>
+            <div className="conclusion">
+              <h3>3. Índice de penalización</h3>
+              <p>
+                El índice de penalización combina cobertura, distancia, densidad y frecuencia para
+                detectar dónde el servicio es más insuficiente respecto a la media urbana.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Recommendations */}
-        <section className="card recommendations">
-          <h2>Recomendaciones Políticas</h2>
-          <ol className="recommendations-list">
-            <li>
-              <strong>Eliminar el requisito de 6 meses para el Bono Solidario</strong>
-              <p>Permitir acceso inmediato a desempleados inscritos en el SCE. El desempleo es una barrera de movilidad independiente de su duración.</p>
-            </li>
-            <li>
-              <strong>Ampliar el umbral de renta para Bono Jubilado</strong>
-              <p>El umbral actual (€1,256/mes) excluye pensiones modestas. Aumentar a €1,500-1,800/mes cubriría más población vulnerable.</p>
-            </li>
-            <li>
-              <strong>Eliminar límite de edad para Bono Estudiante</strong>
-              <p>Validar solo con matrícula en centro oficial, sin restricción de edad. Educación continua no debe penalizarse.</p>
-            </li>
-            <li>
-              <strong>Crear Bono Social por Zona Geográfica</strong>
-              <p>Tarifas reducidas para residentes en las {stats?.sections_poor_coverage} secciones con cobertura &lt;50%, compensando mala accesibilidad.</p>
-            </li>
-            <li>
-              <strong>Eliminar condición de "30 viajes" para bonos gratuitos</strong>
-              <p>Los bonos Wawa Joven, Residente Canario y Oro exigen 30 viajes/90 días para siguiente recarga gratis. Esto excluye a quienes no pueden viajar tanto (movilidad reducida, trabajo desde casa, etc.).</p>
-            </li>
-            <li>
-              <strong>Transparencia en coste real por viaje</strong>
-              <p>Publicar claramente el coste/viaje de cada tarifa. Muchos usuarios no saben que pagar €1.40 directo es 233% más caro que Bono Guagua (€0.42).</p>
-            </li>
-          </ol>
+        <section className="card">
+          <h2>Recomendaciones de Política Tarifaria</h2>
+          <div className="recommendations">
+            <div className="recommendation urgent">
+              <h3>Prioridad: Tarifas + oferta</h3>
+              <p>Las tarifas sociales deben concentrarse en secciones con alta penalización de guaguas, no solo en renta.</p>
+            </div>
+            <div className="recommendation">
+              <h3>Tarifas modulares por cobertura</h3>
+              <p>Descuento adicional en barrios con baja cobertura 300m y poca frecuencia, para compensar la mala accesibilidad.</p>
+            </div>
+            <div className="recommendation">
+              <h3>Plan de mejora por brechas</h3>
+              <p>Fijar metas de cierre de brechas: elevar cobertura 300m y densidad de paradas en los P75 de desempleo y baja formación.</p>
+            </div>
+          </div>
         </section>
 
-        {/* Methodology */}
         <section className="card methodology">
           <h2>Metodología</h2>
           <p>
-            Este análisis combina datos oficiales de:
-          </p>
-          <ul>
-            <li><strong>Tarifas:</strong> Información pública de Guaguas Municipales (2025)</li>
-            <li><strong>Datos socioeconómicos:</strong> INE, Censo 2023 (279 secciones censales)</li>
-            <li><strong>Métricas de servicio:</strong> GTFS de Guaguas Municipales (fecha ref. 2025-01-07)</li>
-            <li><strong>Indicadores calculados:</strong> Exclusión Laboral, Aislamiento Población Mayor, Inequidad Educativa</li>
-          </ul>
-          <p>
-            Los cálculos de coste por viaje asumen uso completo del bono en el periodo de validez.
-            No se incluyen bonos turísticos en el análisis de equidad social.
+            Los indicadores socioeconómicos se contrastan con métricas de guaguas calculadas por sección.
+            Se comparan cuartiles (P25 vs P75) y se calcula un índice de penalización usando z-scores de
+            cobertura (300m y 500m), distancia a parada, densidad y frecuencia diaria. Las correlaciones
+            se calculan con Pearson para detectar sesgos estructurales.
           </p>
         </section>
       </div>
 
       <footer className="analisis-footer">
-        <p>Análisis generado con datos públicos oficiales • {new Date().getFullYear()}</p>
+        <p>Análisis basado en datos de tarifas, socioeconomía y cobertura de transporte público</p>
       </footer>
     </div>
   );
