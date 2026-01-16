@@ -74,6 +74,7 @@ interface Metric {
   value: string;
   label: string;
   formula: string;
+  group: string;
 }
 
 const METRICS: Metric[] = [
@@ -81,76 +82,90 @@ const METRICS: Metric[] = [
   {
     value: 'indicator_unemployment_trap',
     label: 'Exclusión Laboral',
-    formula: 'Zonas con alto desempleo y baja frecuencia de servicio'
+    formula: 'Zonas con alto desempleo y baja frecuencia de servicio',
+    group: 'Indicadores de desigualdad'
   },
   {
     value: 'indicator_elderly_desert',
     label: 'Aislamiento de Población Mayor',
-    formula: 'Zonas con alta población 65+ y baja cobertura de paradas'
+    formula: 'Zonas con alta población 65+ y baja cobertura de paradas',
+    group: 'Indicadores de desigualdad'
   },
   {
     value: 'indicator_education_gap',
     label: 'Inequidad Educativa',
-    formula: 'Zonas con bajo nivel formativo y mala accesibilidad'
+    formula: 'Zonas con bajo nivel formativo y mala accesibilidad',
+    group: 'Indicadores de desigualdad'
   },
 
   // === MÉTRICAS DE SERVICIO ===
   {
     value: 'stop_time_events_all_day',
     label: 'Frecuencia de Servicio',
-    formula: 'Número de eventos diarios (varía por franja horaria)'
+    formula: 'Número de eventos diarios (varía por franja horaria)',
+    group: 'Servicio y accesibilidad'
   },
   {
     value: 'unique_routes_all_day',
     label: 'Diversidad de Líneas',
-    formula: 'Número de líneas únicas que sirven la sección'
+    formula: 'Número de líneas únicas que sirven la sección',
+    group: 'Servicio y accesibilidad'
   },
   {
     value: 'coverage_300_area_pct',
     label: 'Cobertura a 300m',
-    formula: 'Porcentaje de área a menos de 300m de paradas'
+    formula: 'Porcentaje de área a menos de 300m de paradas',
+    group: 'Servicio y accesibilidad'
   },
   {
     value: 'coverage_500_area_pct',
     label: 'Cobertura a 500m',
-    formula: 'Porcentaje de área a menos de 500m de paradas'
+    formula: 'Porcentaje de área a menos de 500m de paradas',
+    group: 'Servicio y accesibilidad'
   },
   {
     value: 'nearest_stop_meters',
     label: 'Distancia a Parada Más Cercana',
-    formula: 'Distancia desde el centroide de la sección'
+    formula: 'Distancia desde el centroide de la sección',
+    group: 'Servicio y accesibilidad'
   },
   {
     value: 'stops_per_km2',
     label: 'Densidad de Paradas',
-    formula: 'Número de paradas por kilómetro cuadrado'
+    formula: 'Número de paradas por kilómetro cuadrado',
+    group: 'Servicio y accesibilidad'
   },
 
   // === CONTEXTO SOCIODEMOGRÁFICO ===
   {
     value: 'prop_elderly',
     label: 'Población Mayor de 65',
-    formula: 'Proporción de población mayor de 65 años'
+    formula: 'Proporción de población mayor de 65 años',
+    group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_services',
     label: 'Trabajadores en Servicios',
-    formula: 'Número absoluto de personas en sector servicios'
+    formula: 'Número absoluto de personas en sector servicios',
+    group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_construction',
     label: 'Trabajadores en Construcción',
-    formula: 'Número absoluto de personas en construcción'
+    formula: 'Número absoluto de personas en construcción',
+    group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_industry',
     label: 'Trabajadores en Industria',
-    formula: 'Número absoluto de personas en industria'
+    formula: 'Número absoluto de personas en industria',
+    group: 'Contexto sociodemográfico'
   },
   {
     value: 'occ_agriculture',
     label: 'Trabajadores en Agricultura',
-    formula: 'Número absoluto de personas en agricultura'
+    formula: 'Número absoluto de personas en agricultura',
+    group: 'Contexto sociodemográfico'
   },
 ];
 
