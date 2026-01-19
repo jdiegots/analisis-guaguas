@@ -1,6 +1,8 @@
 // Get detailed information for a specific stop
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 import { isAuthenticated } from '@/lib/auth';
 
 export async function GET(

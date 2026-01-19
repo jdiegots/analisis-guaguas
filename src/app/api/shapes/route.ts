@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // Generate a unique color based on shape_id hash
 function generateColor(str: string): string {
   let hash = 0;

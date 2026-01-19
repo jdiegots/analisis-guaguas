@@ -143,7 +143,7 @@ export async function GET() {
     const totalPop = weightedServiceValues.reduce((sum, item) => sum + item.pop, 0) || 1;
 
     // Population-weighted percentile calculation
-    const getWeightedPercentile = (items: Array<{value: number, pop: number}>, p: number) => {
+    const getWeightedPercentile = (items: Array<{ value: number, pop: number }>, p: number) => {
       const targetPop = totalPop * p;
       let accumPop = 0;
 
