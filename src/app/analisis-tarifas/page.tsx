@@ -364,7 +364,7 @@ export default function AnalisisTarifas() {
     if (name.includes('tarjeta') && name.includes('3') && (name.includes('dia') || name.includes('day'))) return 12.00 / (tDay * 3);
 
     // Default fallback from API if available, else 1.40
-    const tariffData = tariffs?.find(t => normalize(t.name) === name);
+    const tariffData = effectiveData?.tariffs?.find((t: any) => normalize(t.name) === name);
     return tariffData?.eur_per_trip || 1.40;
   };
 
@@ -687,7 +687,7 @@ export default function AnalisisTarifas() {
 
   // Effective pricing calculations
   const getTariffStats = (tariffName: string, sectionsList: any[]) => {
-    const data = tariffs.find(t => t.name === tariffName);
+    const data = tariffs?.find((t: any) => t.name === tariffName);
     const nominal = data?.eur_per_trip || 1.40;
 
     const validItems = sectionsList
@@ -757,13 +757,13 @@ export default function AnalisisTarifas() {
   const customObservableP50 = t1StatsCustom.obsP50;
   const customObservableP90 = t1StatsCustom.obsP90;
 
-  const doublePunishmentSections = sections.filter(
-    s => s.need_index > 0.5 && s.service_gap > 0.1
+  const doublePunishmentSections = (sections || []).filter(
+    (s: any) => s.need_index > 0.5 && s.service_gap > 0.1
   );
 
   const bonoSolidarioEffective = (sections || [])
-    .filter(s => s.effective_prices && s.effective_prices['Bono_Solidario'])
-    .map(s => {
+    .filter((s: any) => s.effective_prices && s.effective_prices['Bono_Solidario'])
+    .map((s: any) => {
       const nominal = s.effective_prices['Bono_Solidario']?.nominal_eur_per_trip || 0;
       const effSol = s.effective_prices['Bono_Solidario']?.effective_eur_per_trip || 0;
       const effDir = s.effective_prices['Pago_Directo']?.effective_eur_per_trip || 1;
@@ -1323,13 +1323,13 @@ export default function AnalisisTarifas() {
             {(() => {
               const activeSections = customSections || sections;
               const validItems = activeSections
-                .filter(s => s.effective_prices[selectedTariff]?.observable_effective_eur_per_trip !== undefined)
-                .map(s => ({
+                .filter((s: any) => s.effective_prices[selectedTariff]?.observable_effective_eur_per_trip !== undefined)
+                .map((s: any) => ({
                   price: s.effective_prices[selectedTariff].observable_effective_eur_per_trip,
                   pop: s.total_population || 100
                 }));
 
-              const totalPop = validItems.reduce((acc, item) => acc + item.pop, 0);
+              const totalPop = validItems.reduce((acc: number, item: any) => acc + item.pop, 0);
 
               const getPopWeightedPercentile = (pct: number) => {
                 if (validItems.length === 0) return nominalPrice;
@@ -1401,13 +1401,13 @@ export default function AnalisisTarifas() {
               // Prepare data for the Lorenz-like curve - POPULATION WEIGHTED
               const activeSections = customSections || sections;
               const validItems = activeSections
-                .filter(s => s.effective_prices[selectedTariff]?.observable_effective_eur_per_trip !== undefined)
-                .map(s => ({
+                .filter((s: any) => s.effective_prices[selectedTariff]?.observable_effective_eur_per_trip !== undefined)
+                .map((s: any) => ({
                   price: s.effective_prices[selectedTariff].observable_effective_eur_per_trip,
                   pop: s.total_population || 100
                 }));
 
-              const totalPop = validItems.reduce((acc, item) => acc + item.pop, 0) || 1;
+              const totalPop = validItems.reduce((acc: number, item: any) => acc + item.pop, 0) || 1;
 
               // Function to get population-weighted percentile
               const getPopWeightedPercentile = (pct: number) => {
@@ -1584,9 +1584,9 @@ export default function AnalisisTarifas() {
                   <h3>Barrios mas afectados por Doble Castigo (Top 10)</h3>
                   <ul>
                     {doublePunishmentSections
-                      .sort((a, b) => b.service_gap - a.service_gap)
+                      .sort((a: any, b: any) => b.service_gap - a.service_gap)
                       .slice(0, 10)
-                      .map(s => (
+                      .map((s: any) => (
                         <li key={s.section_code}>
                           <strong>{s.section_code}</strong>:
                           Necesidad = {((s.need_index || 0) * 100).toFixed(0)}%,
