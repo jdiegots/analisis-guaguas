@@ -322,26 +322,6 @@ export default function SidePanel({
                 {(sectionData.section.tourist_places_count || 0).toLocaleString()} plazas totales en la sección.
               </div>
             </div>
-
-            <div className="metric-card">
-              <h3>Desierto de Mayores</h3>
-              <div className="value">
-                {((sectionData.section.indicator_elderly_desert || 0) * 100).toFixed(0)}%
-              </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '8px', color: '#555', fontStyle: 'italic' }}>
-                Identifica zonas con alta densidad de personas mayores y baja cobertura de paradas, señalando puntos críticos de aislamiento poblacional.
-              </div>
-            </div>
-
-            <div className="metric-card">
-              <h3>Desconexión Laboral</h3>
-              <div className="value">
-                {((sectionData.section.indicator_worker_commute || 0) * 100).toFixed(0)}%
-              </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '8px', color: '#555', fontStyle: 'italic' }}>
-                Muestra la brecha entre las zonas de residencia de la clase trabajadora y el acceso a una red de transporte con frecuencias competitivas.
-              </div>
-            </div>
           </div>
         </div>
       )}
