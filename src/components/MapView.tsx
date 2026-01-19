@@ -148,12 +148,6 @@ const METRICS: Metric[] = [
     formula: 'Precio Efectivo ajustado al máximo IVS observable en la ciudad. P90 como ancla.',
     group: 'Análisis de Tarifas y Equidad'
   },
-  {
-    value: 'geographic_tax_ratio',
-    label: 'Impuesto geográfico (Ratio)',
-    formula: 'Cuántas veces más caro sale el servicio respecto a una zona ideal',
-    group: 'Análisis de Tarifas y Equidad'
-  },
 
   // === CONTEXTO SOCIODEMOGRÁFICO ===
   {
