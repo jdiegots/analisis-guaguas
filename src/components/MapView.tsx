@@ -132,39 +132,33 @@ const METRICS: Metric[] = [
   // === ANÁLISIS DE TARIFAS (NUEVO) ===
   {
     value: 'service_value_index',
-    label: 'Índice del Valor del Servicio (0-1)',
+    label: 'Índice de valor del servicio (0-1)',
     formula: 'Calidad objetiva (Frecuencia + Cobertura + Rutas + Cercanía)',
     group: 'Análisis de Tarifas y Equidad'
   },
   {
     value: 'effective_price_single',
-    label: 'Precio Efectivo (€/unidad)',
+    label: 'Precio efectivo (€/unidad)',
     formula: 'Coste real por unidad de servicio recibido (1.40€ / Índice)',
     group: 'Análisis de Tarifas y Equidad'
   },
   {
     value: 'observable_effective_price_single',
-    label: 'Precio Efectivo Observable (€)',
+    label: 'Precio efectivo observable (€)',
     formula: 'Precio Efectivo ajustado al máximo IVS observable en la ciudad. P90 como ancla.',
-    group: 'Análisis de Tarifas y Equidad'
-  },
-  {
-    value: 'geographic_tax_ratio',
-    label: 'Impuesto geográfico (Ratio)',
-    formula: 'Cuántas veces más caro sale el servicio respecto a una zona ideal',
     group: 'Análisis de Tarifas y Equidad'
   },
 
   // === CONTEXTO SOCIODEMOGRÁFICO ===
   {
     value: 'income_median',
-    label: 'Renta Media (Hogares)',
+    label: 'Renta media (hogares)',
     formula: 'Renta neta media por unidad de consumo',
     group: 'Contexto sociodemográfico'
   },
   {
     value: 'prop_elderly',
-    label: 'Población Mayor de 65',
+    label: 'Población mayor de 65',
     formula: 'Proporción de población mayor de 65 años',
     group: 'Contexto sociodemográfico'
   },
@@ -172,13 +166,13 @@ const METRICS: Metric[] = [
   // === MÉTRICAS DE SERVICIO ===
   {
     value: 'stop_time_events_all_day',
-    label: 'Frecuencia de Servicio',
+    label: 'Frecuencia de servicio',
     formula: 'Número de eventos diarios (varía por franja horaria)',
     group: 'Servicio y accesibilidad'
   },
   {
     value: 'unique_routes_all_day',
-    label: 'Diversidad de Líneas',
+    label: 'Diversidad de líneas',
     formula: 'Número de líneas únicas que sirven la sección',
     group: 'Servicio y accesibilidad'
   },
@@ -190,7 +184,7 @@ const METRICS: Metric[] = [
   },
   {
     value: 'stops_per_km2',
-    label: 'Densidad de Paradas',
+    label: 'Densidad de paradas',
     formula: 'Número de paradas por kilómetro cuadrado',
     group: 'Servicio y accesibilidad'
   },
