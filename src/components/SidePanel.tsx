@@ -219,7 +219,7 @@ export default function SidePanel({
                       color: '#2c3e50'
                     }}
                   >
-                    <span>{isTopRoutesOpen ? '▼' : '▶'} Top Líneas</span>
+                    <span>{isTopRoutesOpen ? '▼' : '▶'} Líneas</span>
                     <span style={{ fontSize: '0.8rem', color: '#666' }}>{sectionData.topRoutes[timeSlot].length} líneas</span>
                   </button>
                   {isTopRoutesOpen && (
@@ -258,7 +258,7 @@ export default function SidePanel({
                       color: '#2c3e50'
                     }}
                   >
-                    <span>{isSectionStopsOpen ? '▼' : '▶'} Lista de Paradas</span>
+                    <span>{isSectionStopsOpen ? '▼' : '▶'} Paradas</span>
                     <span style={{ fontSize: '0.8rem', color: '#666' }}>{sectionData.stops.length} paradas</span>
                   </button>
                   {isSectionStopsOpen && (
@@ -309,10 +309,6 @@ export default function SidePanel({
             <h3 style={{ marginTop: '30px', marginBottom: '15px', color: '#2c3e50', borderBottom: '2px solid #FDB913', paddingBottom: '8px' }}>
               Indicadores
             </h3>
-            <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px', lineHeight: '1.5' }}>
-              Relación entre vulnerabilidad social, turismo y calidad del transporte.
-            </div>
-
             <div className="metric-card">
               <h3>Presión Turística</h3>
               <div className="value">
