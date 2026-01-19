@@ -15,10 +15,12 @@
     "build:metrics": "node scripts/build-metrics.js",
     "build:indicators": "node scripts/build-political-indicators.js",
     "build:shapes": "node scripts/build-shapes.js",
+    "build:service-value": "node scripts/calculate-service-value.js",
     "import:all": "npm run import:gtfs && npm run import:sections && npm run import:socioeconomic && npm run import:fares && npm run build:metrics && npm run build:indicators && npm run build:shapes"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "chart.js": "^4.5.1",
     "csv-parse": "^5.5.5",
     "dotenv": "^16.4.5",
     "geojson": "^0.5.0",
@@ -28,9 +30,12 @@
     "pg-promise": "^11.9.1",
     "proj4": "^2.20.2",
     "react": "^18.3.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.0",
     "react-map-gl": "^7.1.7",
-    "shapefile": "^0.6.6"
+    "shapefile": "^0.6.6",
+    "simple-statistics": "^7.8.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.14",

@@ -71,6 +71,19 @@
   border-bottom-color: #3498db;
 }
 
+.card.question h2 {
+  border-bottom-color: #9b59b6;
+  font-size: 1.6rem;
+}
+
+.card.solutions h2 {
+  border-bottom-color: #27ae60;
+}
+
+.card.summary h2 {
+  border-bottom-color: #34495e;
+}
+
 /* Summary Grid */
 .summary-grid {
   display: grid;

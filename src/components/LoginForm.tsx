@@ -40,26 +40,25 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>
-        <h1>Guaguas Municipales</h1>
-        <p>Análisis de Transporte - Las Palmas de GC</p>
+        <h1>Análisis de Guaguas Municipales</h1>
+        <p></p>
 
         {error && <div className="error-message">{error}</div>}
 
         <div className="form-group">
-          <label htmlFor="password">Contraseña de acceso</label>
+          <label htmlFor="password">código</label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Introduce la contraseña"
             autoFocus
             disabled={isLoading}
           />
         </div>
 
         <button type="submit" className="btn-primary" disabled={isLoading}>
-          {isLoading ? 'Accediendo...' : 'Acceder'}
+          {isLoading ? 'Validando...' : 'Acceder'}
         </button>
       </form>
     </div>

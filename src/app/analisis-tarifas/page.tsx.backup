@@ -1,0 +1,439 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import './tarifas.css';
+import './tarifas-extra.css';
+
+interface Fare {
+  name: string;
+  type: string;
+  price_euros: number;
+  trips_included: number;
+  validity_days: number;
+  cost_per_trip: number | null;
+  requirements: string;
+  target_group: string;
+  is_social_fare: boolean;
+}
+
+interface FareAnalysisStats {
+  summary: {
+    avg_unemployment: number;
+    avg_elderly_prop: number;
+    avg_low_education: number;
+    avg_working_class: number;
+    avg_services_share: number;
+    total_sections: number;
+    median_coverage_300: number;
+    median_nearest_stop: number;
+  };
+  bus: {
+    avg_stops_count: number;
+    avg_stops_density: number;
+    avg_nearest_stop_dist: number;
+    avg_coverage_300: number;
+    avg_coverage_500: number;
+    avg_freq_day: number;
+    avg_freq_morning: number;
+    avg_freq_midday: number;
+    avg_freq_afternoon: number;
+    avg_freq_night: number;
+  };
+  contrasts: Array<{
+    key: string;
+    label: string;
+    unit: '%' | 'ratio';
+    description: string;
+    thresholds: { p25: number; p75: number };
+    sections: { high: number; low: number };
+    averages: {
+      high_value: number;
+      low_value: number;
+      high_coverage_300: number;
+      low_coverage_300: number;
+      high_coverage_500: number;
+      low_coverage_500: number;
+      high_nearest_stop: number;
+      low_nearest_stop: number;
+      high_stops_count: number;
+      low_stops_count: number;
+      high_stops_density: number;
+      low_stops_density: number;
+      high_freq_day: number;
+      low_freq_day: number;
+      high_penalty: number;
+      low_penalty: number;
+    };
+    gaps: {
+      coverage_300: number;
+      coverage_500: number;
+      nearest_stop: number;
+      stops_density: number;
+      stops_count: number;
+      freq_day: number;
+      penalty_index: number;
+    };
+    correlations: {
+      coverage_300: number;
+      coverage_500: number;
+      nearest_stop: number;
+      stops_density: number;
+      freq_day: number;
+    };
+  }>;
+}
+
+const formatPercent = (value: number, digits = 1) => `${(value * 100).toFixed(digits)}%`;
+const formatNumber = (value: number, digits = 1) => value.toFixed(digits);
+
+export default function AnalisisTarifas() {
+  const [fares, setFares] = useState<Fare[]>([]);
+  const [stats, setStats] = useState<FareAnalysisStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const faresRes = await fetch('/api/fares');
+      const faresData = await faresRes.json();
+      setFares(faresData);
+
+      const statsRes = await fetch('/api/fare-analysis');
+      const statsData = await statsRes.json();
+      setStats(statsData);
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Cargando análisis de equidad tarifaria...</div>;
+  }
+
+  // Calcular costes
+  const avgCostGeneral = fares
+    .filter(f => !f.is_social_fare && f.cost_per_trip)
+    .reduce((sum, f) => sum + (f.cost_per_trip || 0), 0) / fares.filter(f => !f.is_social_fare && f.cost_per_trip).length || 0;
+
+  const avgCostSocial = fares
+    .filter(f => f.is_social_fare && f.cost_per_trip)
+    .reduce((sum, f) => sum + (f.cost_per_trip || 0), 0) / fares.filter(f => f.is_social_fare && f.cost_per_trip).length || 0;
+
+  const bonoSolidario = fares.find(f => f.name.includes('Bono Solidario') && !f.name.includes('Compartido'));
+  const bonoJubilado = fares.find(f => f.name.includes('Bono Jubilado') && !f.name.includes('Compartido'));
+  const bonoEstudiante = fares.find(f => f.name.includes('Bono Estudiante') && !f.name.includes('Compartido'));
+
+  // Encontrar el contraste de desempleo
+  const unemploymentContrast = stats?.contrasts.find(c => c.key === 'unemployment');
+  const elderlyContrast = stats?.contrasts.find(c => c.key === 'elderly');
+  const lowEducationContrast = stats?.contrasts.find(c => c.key === 'low_education');
+
+  return (
+    <div className="analisis-container">
+      <header className="analisis-header">
+        <h1>¿A quién benefician realmente las tarifas de Guaguas?</h1>
+        <p>Análisis de justicia tarifaria en el transporte público de Las Palmas de Gran Canaria</p>
+        <a href="/" className="back-link">← Volver al mapa</a>
+      </header>
+
+      <div className="content">
+        {/* Pregunta 1: ¿Quién paga más? */}
+        <section className="card question">
+          <h2>1. ¿Quién paga más por moverse en guagua?</h2>
+
+          <div className="answer">
+            <div className="answer-highlight">
+              <div className="big-number">€{avgCostGeneral.toFixed(3)}</div>
+              <div className="big-label">Coste medio tarifa general</div>
+            </div>
+            <div className="answer-highlight">
+              <div className="big-number">€{avgCostSocial.toFixed(3)}</div>
+              <div className="big-label">Coste medio tarifa social</div>
+            </div>
+            <div className="answer-highlight critical">
+              <div className="big-number">{((avgCostGeneral / avgCostSocial - 1) * 100).toFixed(0)}%</div>
+              <div className="big-label">más caro sin bono social</div>
+            </div>
+          </div>
+
+          <div className="verdict">
+            <strong>Veredicto:</strong> Una persona sin acceso a bonos sociales paga {((avgCostGeneral / avgCostSocial)).toFixed(1)}× más por viaje.
+            Si haces 40 viajes al mes (2 viajes/día laboral), pagas €{(avgCostGeneral * 40).toFixed(2)} al mes con tarifa general
+            vs €{(avgCostSocial * 40).toFixed(2)} con bono social. Diferencia: €{((avgCostGeneral - avgCostSocial) * 40).toFixed(2)}/mes.
+          </div>
+        </section>
+
+        {/* Pregunta 2: ¿Los desempleados que más necesitan el bus tienen acceso? */}
+        <section className="card question critical">
+          <h2>2. ¿Los desempleados tienen acceso al Bono Solidario cuando más lo necesitan?</h2>
+
+          {bonoSolidario && (
+            <>
+              <div className="answer">
+                <div className="barrier">
+                  <h3>❌ Barrera burocrática</h3>
+                  <p><strong>Requisito:</strong> {bonoSolidario.requirements}</p>
+                  <p className="impact">
+                    <strong>Impacto:</strong> Si quedas desempleado hoy, debes esperar 6 meses para acceder al bono.
+                    Durante esos 6 meses, pagas €{avgCostGeneral.toFixed(3)}/viaje (tarifa general)
+                    en lugar de €{(bonoSolidario.cost_per_trip || 0).toFixed(3)}/viaje.
+                  </p>
+                  <p className="cost">
+                    <strong>Coste extra en 6 meses:</strong> €{((avgCostGeneral - (bonoSolidario.cost_per_trip || 0)) * 40 * 6).toFixed(2)}
+                    {' '}(asumiendo 40 viajes/mes para buscar empleo).
+                  </p>
+                </div>
+
+                {unemploymentContrast && (
+                  <div className="service-gap">
+                    <h3>📉 Brecha de servicio en zonas con alto desempleo</h3>
+                    <p>
+                      Las {unemploymentContrast.sections.high} secciones con más desempleo ({formatPercent(unemploymentContrast.averages.high_value)} de paro) tienen:
+                    </p>
+                    <ul>
+                      <li><strong>{unemploymentContrast.averages.high_coverage_300.toFixed(1)}% cobertura 300m</strong> vs {unemploymentContrast.averages.low_coverage_300.toFixed(1)}% en zonas con bajo desempleo
+                        → Brecha: {unemploymentContrast.gaps.coverage_300.toFixed(1)}%</li>
+                      <li><strong>{unemploymentContrast.averages.high_nearest_stop.toFixed(0)}m a parada más cercana</strong> vs {unemploymentContrast.averages.low_nearest_stop.toFixed(0)}m
+                        → {unemploymentContrast.gaps.nearest_stop.toFixed(0)}m más lejos</li>
+                      <li><strong>{unemploymentContrast.averages.high_freq_day.toFixed(0)} eventos/día</strong> vs {unemploymentContrast.averages.low_freq_day.toFixed(0)}
+                        → {Math.abs(unemploymentContrast.gaps.freq_day).toFixed(0)} eventos menos</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="verdict critical">
+                <strong>Veredicto:</strong> DOBLE CASTIGO. Los desempleados sin 6 meses acumulados:
+                <br/>1) Pagan {((avgCostGeneral / (bonoSolidario.cost_per_trip || 0.125)) - 1) * 100).toFixed(0)}% más caro
+                <br/>2) Viven en zonas con {unemploymentContrast && unemploymentContrast.gaps.coverage_300.toFixed(1)}% menos cobertura y peor servicio
+                <br/><br/>
+                <strong>La barrera de 6 meses es una trampa:</strong> justo cuando más necesitas movilidad para buscar trabajo, no puedes acceder al bono.
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* Pregunta 3: ¿Los mayores aislados tienen transporte? */}
+        <section className="card question critical">
+          <h2>3. ¿La población mayor tiene acceso real al transporte gratuito?</h2>
+
+          {bonoJubilado && elderlyContrast && (
+            <>
+              <div className="answer">
+                <div className="barrier">
+                  <h3>❌ Barrera económica invisible</h3>
+                  <p><strong>Requisito:</strong> {bonoJubilado.requirements}</p>
+                  <p className="impact">
+                    <strong>Problema:</strong> Umbral de renta familiar €1,256.60/mes (€15,079/año).
+                    La pensión media en Canarias es ~€1,100/mes, pero muchos mayores viven en hogares con otros ingresos que superan el umbral.
+                  </p>
+                </div>
+
+                <div className="service-gap">
+                  <h3>📉 Paradoja del aislamiento</h3>
+                  <p>
+                    Las {elderlyContrast.sections.high} secciones con más población mayor ({formatPercent(elderlyContrast.averages.high_value)} de 65+) tienen:
+                  </p>
+                  <ul>
+                    <li><strong>{elderlyContrast.averages.high_coverage_300.toFixed(1)}% cobertura 300m</strong> vs {elderlyContrast.averages.low_coverage_300.toFixed(1)}% en zonas jóvenes
+                      → Brecha: {elderlyContrast.gaps.coverage_300.toFixed(1)}%</li>
+                    <li><strong>{elderlyContrast.averages.high_nearest_stop.toFixed(0)}m a parada</strong> vs {elderlyContrast.averages.low_nearest_stop.toFixed(0)}m
+                      → {elderlyContrast.gaps.nearest_stop.toFixed(0)}m más lejos</li>
+                    <li><strong>{elderlyContrast.averages.high_freq_day.toFixed(0)} eventos/día</strong> vs {elderlyContrast.averages.low_freq_day.toFixed(0)}
+                      → {Math.abs(elderlyContrast.gaps.freq_day).toFixed(0)} eventos menos</li>
+                  </ul>
+                  <p className="cost">
+                    Para mayores que NO califican para el bono gratuito, alternativas:
+                    <br/>• Bono Oro: €10/90 días (pero solo gratis si haces 30+ viajes/90 días - muchos mayores con movilidad reducida no llegan)
+                    <br/>• Tarifa general: €{avgCostGeneral.toFixed(3)}/viaje
+                  </p>
+                </div>
+              </div>
+
+              <div className="verdict critical">
+                <strong>Veredicto:</strong> ABANDONO SISTEMÁTICO. Los barrios envejecidos tienen:
+                <br/>1) {elderlyContrast.gaps.coverage_300.toFixed(1)}% menos cobertura de paradas
+                <br/>2) Paradas {elderlyContrast.gaps.nearest_stop.toFixed(0)}m más lejos (crítico para movilidad reducida)
+                <br/>3) {Math.abs(elderlyContrast.gaps.freq_day).toFixed(0)} eventos menos al día
+                <br/><br/>
+                <strong>Y los mayores con rentas modestas (€1,300-1,800/mes) quedan excluidos del bono gratuito.</strong>
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* Pregunta 4: ¿Educación y movilidad? */}
+        {bonoEstudiante && lowEducationContrast && (
+          <section className="card question">
+            <h2>4. ¿El sistema tarifario perpetúa la desigualdad educativa?</h2>
+
+            <div className="answer">
+              <div className="barrier">
+                <h3>❌ Límite de edad arbitrario</h3>
+                <p><strong>Requisito Bono Estudiante:</strong> {bonoEstudiante.requirements}</p>
+                <p className="impact">
+                  <strong>Excluye:</strong> Estudiantes mayores de 26 años (másteres, segundos grados, FP superior, formación continua).
+                  <br/><strong>Coste discriminatorio:</strong> Estudiante de 25 años paga €{(bonoEstudiante.cost_per_trip || 0).toFixed(3)}/viaje.
+                  Estudiante de 27 años paga €{avgCostGeneral.toFixed(3)}/viaje (+{(((avgCostGeneral / (bonoEstudiante.cost_per_trip || 0.175)) - 1) * 100).toFixed(0)}%).
+                </p>
+              </div>
+
+              <div className="service-gap">
+                <h3>📉 Trampa territorial de baja formación</h3>
+                <p>
+                  Las {lowEducationContrast.sections.high} secciones con más baja formación ({formatPercent(lowEducationContrast.averages.high_value)} educación básica) tienen:
+                </p>
+                <ul>
+                  <li><strong>{lowEducationContrast.averages.high_coverage_300.toFixed(1)}% cobertura 300m</strong> vs {lowEducationContrast.averages.low_coverage_300.toFixed(1)}% en zonas con alta formación
+                    → Brecha: {lowEducationContrast.gaps.coverage_300.toFixed(1)}%</li>
+                  <li><strong>{lowEducationContrast.averages.high_nearest_stop.toFixed(0)}m a parada</strong> vs {lowEducationContrast.averages.low_nearest_stop.toFixed(0)}m
+                    → {lowEducationContrast.gaps.nearest_stop.toFixed(0)}m más lejos</li>
+                  <li><strong>{lowEducationContrast.averages.high_freq_day.toFixed(0)} eventos/día</strong> vs {lowEducationContrast.averages.low_freq_day.toFixed(0)}
+                    → {Math.abs(lowEducationContrast.gaps.freq_day).toFixed(0)} eventos menos</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="verdict">
+              <strong>Veredicto:</strong> CÍRCULO VICIOSO. Las zonas con baja formación tienen peor servicio de bus,
+              dificultando el acceso a centros educativos. Y quienes intentan formarse después de los 26 años pagan el doble por desplazarse.
+            </div>
+          </section>
+        )}
+
+        {/* Respuestas políticas concretas */}
+        <section className="card solutions">
+          <h2>Reformas Urgentes (no "recomendaciones")</h2>
+
+          <div className="solution urgent">
+            <h3>1. Eliminar barrera de 6 meses en Bono Solidario</h3>
+            <p><strong>Problema:</strong> Excluye a quien acaba de perder el empleo, justo cuando más necesita movilidad.</p>
+            <p><strong>Solución:</strong> Bono Solidario desde el día 1 de inscripción en el SCE como demandante de empleo.</p>
+            <p><strong>Coste estimado:</strong> Marginal. Los nuevos desempleados ya usarían transporte pagando tarifa general.</p>
+            <p><strong>Impacto:</strong> Facilita búsqueda activa de empleo desde el primer día.</p>
+          </div>
+
+          <div className="solution urgent">
+            <h3>2. Ampliar umbral de renta Bono Jubilado a €1,800/mes</h3>
+            <p><strong>Problema:</strong> €1,256/mes excluye pensiones modestas en hogares con ingresos adicionales pequeños.</p>
+            <p><strong>Solución:</strong> Subir umbral a €1,800/mes (21,600€/año) por unidad familiar.</p>
+            <p><strong>Justificación:</strong> El umbral actual (€15,079/año) está por debajo del SMI anual (€15,876 en 2024).</p>
+          </div>
+
+          <div className="solution urgent">
+            <h3>3. Eliminar límite de edad Bono Estudiante</h3>
+            <p><strong>Problema:</strong> Discrimina formación continua y educación adulta.</p>
+            <p><strong>Solución:</strong> Bono válido con matrícula en centro oficial, sin límite de edad.</p>
+            <p><strong>Precedente:</strong> Muchas ciudades europeas no limitan por edad, solo por condición de estudiante.</p>
+          </div>
+
+          <div className="solution critical">
+            <h3>4. Bono por Zona de Penalización de Servicio</h3>
+            <p><strong>Problema:</strong> Zonas vulnerables tienen peor servicio (menos cobertura, menos frecuencia, paradas más lejas).</p>
+            <p><strong>Solución:</strong> Tarifa social adicional para residentes en secciones con:</p>
+            <ul>
+              <li>Cobertura 300m {'<'} 50%</li>
+              <li>Parada más cercana {'>'} 400m</li>
+              <li>Frecuencia diaria {'<'} 100 eventos</li>
+            </ul>
+            <p><strong>Justificación:</strong> Si el servicio es malo, la tarifa debe compensar. No es justo pagar igual por peor servicio.</p>
+          </div>
+
+          <div className="solution">
+            <h3>5. Eliminar condición "30 viajes/90 días" para bonos gratuitos</h3>
+            <p><strong>Problema:</strong> Wawa Joven, Residente Canario y Bono Oro exigen 30 viajes para renovación gratuita.</p>
+            <p><strong>Discrimina a:</strong> Mayores con movilidad reducida, teletrabajadores, personas con horarios irregulares.</p>
+            <p><strong>Solución:</strong> Eliminar requisito de uso mínimo. El objetivo es facilitar movilidad, no penalizar a quien no viaja tanto.</p>
+          </div>
+
+          <div className="solution">
+            <h3>6. Transparencia radical en coste real</h3>
+            <p><strong>Problema:</strong> La mayoría de usuarios no sabe que pago directo (€1.40) es 233% más caro que Bono Guagua (€0.42).</p>
+            <p><strong>Solución:</strong> Campaña pública mostrando coste/viaje de cada opción. Información en todas las paradas.</p>
+          </div>
+        </section>
+
+        {/* Datos duros finales */}
+        <section className="card summary">
+          <h2>En Resumen: Los Números Que Importan</h2>
+
+          <div className="summary-grid">
+            <div className="summary-fact">
+              <div className="fact-number">{((avgCostGeneral / avgCostSocial)).toFixed(1)}×</div>
+              <div className="fact-label">más caro sin bono social</div>
+            </div>
+
+            {unemploymentContrast && (
+              <div className="summary-fact">
+                <div className="fact-number">{unemploymentContrast.gaps.coverage_300.toFixed(1)}%</div>
+                <div className="fact-label">menos cobertura en zonas con alto desempleo</div>
+              </div>
+            )}
+
+            {elderlyContrast && (
+              <div className="summary-fact">
+                <div className="fact-number">{elderlyContrast.gaps.nearest_stop.toFixed(0)}m</div>
+                <div className="fact-label">más lejos la parada en barrios envejecidos</div>
+              </div>
+            )}
+
+            <div className="summary-fact">
+              <div className="fact-number">6 meses</div>
+              <div className="fact-label">espera para Bono Solidario siendo desempleado</div>
+            </div>
+
+            <div className="summary-fact">
+              <div className="fact-number">€1,256</div>
+              <div className="fact-label">umbral renta Bono Jubilado (inferior al SMI)</div>
+            </div>
+
+            <div className="summary-fact">
+              <div className="fact-number">26 años</div>
+              <div className="fact-label">límite edad Bono Estudiante (discrimina formación continua)</div>
+            </div>
+          </div>
+
+          <div className="final-verdict">
+            <p>
+              <strong>Conclusión política:</strong> El sistema de tarifas actual no solo es regresivo en precio,
+              sino que las barreras burocráticas se combinan con peor servicio de transporte en zonas vulnerables,
+              creando una doble penalización: <strong>pagar más por peor servicio, o quedar excluido de bonos sociales
+              por requisitos arbitrarios.</strong>
+            </p>
+            <p>
+              Las reformas propuestas no son "recomendaciones técnicas" sino correcciones de injusticias concretas y medibles.
+            </p>
+          </div>
+        </section>
+
+        <section className="card methodology">
+          <h2>Metodología</h2>
+          <p>
+            <strong>Datos utilizados:</strong>
+          </p>
+          <ul>
+            <li>Tarifas oficiales de Guaguas Municipales (2025)</li>
+            <li>Censo INE 2023: 279 secciones censales de Las Palmas de Gran Canaria</li>
+            <li>GTFS Guaguas Municipales (ref. 2025-01-07): paradas, frecuencias, cobertura</li>
+            <li>Métricas calculadas: cobertura 300m/500m, distancia a parada más cercana, densidad de paradas, eventos por franja horaria</li>
+          </ul>
+          <p>
+            <strong>Contrastes:</strong> Se comparan cuartiles P25 vs P75 de cada indicador socioeconómico
+            (desempleo, envejecimiento, baja formación) con métricas de servicio de guaguas.
+            Las brechas muestran diferencias territoriales entre zonas vulnerables y privilegiadas.
+          </p>
+        </section>
+      </div>
+
+      <footer className="analisis-footer">
+        <p>Análisis de equidad tarifaria • Datos públicos oficiales • {new Date().getFullYear()}</p>
+      </footer>
+    </div>
+  );
+}

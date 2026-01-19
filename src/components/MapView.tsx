@@ -15,7 +15,7 @@ const INITIAL_VIEW = {
   zoom: 12
 };
 
-// Unified color scale - all metrics use the same blue gradient
+// Unified blue scale for standard metrics
 const UNIFIED_BLUE_SCALE = [
   { value: 0, color: '#f7fbff' },
   { value: 0.2, color: '#deebf7' },
@@ -25,37 +25,87 @@ const UNIFIED_BLUE_SCALE = [
   { value: 1.0, color: '#08519c' },
 ];
 
+// Special scales for specific metrics
+const RED_SCALE = [
+  { value: 0, color: '#fff5f0' },
+  { value: 0.2, color: '#fee0d2' },
+  { value: 0.4, color: '#fcbba1' },
+  { value: 0.6, color: '#fc9272' },
+  { value: 0.8, color: '#fb6a4a' },
+  { value: 1.0, color: '#cb181d' },
+];
+
+const GREEN_SCALE = [
+  { value: 0, color: '#f7fcf5' },
+  { value: 0.2, color: '#e5f5e0' },
+  { value: 0.4, color: '#c7e9c0' },
+  { value: 0.6, color: '#a1d99b' },
+  { value: 0.8, color: '#74c476' },
+  { value: 1.0, color: '#238b45' },
+];
+
+// Definition of min/max values for scaling (Empirical quantiles from data)
+// These "max" values represent the ~95th percentile to avoid outliers flattening the map
+const SCALES = {
+  // Service
+  events: 1000,
+  routes: 10,
+  coverage: 100,
+  density: 20,
+
+  // Advanced Fare Analysis
+  service_index: 1.0,
+  effective_price: 15.0, // Max reasonable price per unit (outliers go up to 140€)
+  geo_tax: 10.0, // Ratio 10x
+
+  // Demographics
+  income: 30000, // Cap at 30k for visualization contrast
+  elderly: 0.40, // 40% elderly population cap
+
+  // Inequality
+  inequality_index: 1000, // Normalized metric
+
+  // Employment
+  sector_share: 0.40, // 40% of workforce in a sector
+};
+
 const COLOR_SCALES = {
-  // Frequency metrics (normalized 0-1)
-  stop_time_events_all_day: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 3000 })),
-  stop_time_events_morning: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 800 })),
-  stop_time_events_midday: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 800 })),
-  stop_time_events_afternoon: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 800 })),
-  stop_time_events_night: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 300 })),
+  // === SERVICE ===
+  stop_time_events_all_day: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.events })),
+  stop_time_events_morning: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * (SCALES.events * 0.3) })), // Morning is subset
+  stop_time_events_midday: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * (SCALES.events * 0.3) })),
+  stop_time_events_afternoon: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * (SCALES.events * 0.3) })),
+  stop_time_events_night: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * (SCALES.events * 0.1) })),
 
-  // Coverage metrics (0-100%)
+  unique_routes_all_day: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.routes })),
   coverage_300_area_pct: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 100 })),
-  coverage_500_area_pct: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 100 })),
+  stops_per_km2: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.density })),
 
-  // Density and accessibility
-  stops_per_km2: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 50 })),
-  nearest_stop_meters: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 1000 })),
-  unique_routes_all_day: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * 20 })),
+  // === ADVANCED FARE ANALYSIS (Red = Bad for price/tax, Green = Good for service) ===
+  service_value_index: GREEN_SCALE.map(s => ({ ...s, value: s.value * 1.0 })),
 
-  // Inequality indicators (0-1)
-  indicator_elderly_desert: UNIFIED_BLUE_SCALE,
-  indicator_unemployment_trap: UNIFIED_BLUE_SCALE,
-  indicator_education_gap: UNIFIED_BLUE_SCALE,
-  indicator_service_dependency: UNIFIED_BLUE_SCALE,
+  effective_price_single: RED_SCALE.map(s => ({ ...s, value: s.value * SCALES.effective_price })),
+  observable_effective_price_single: RED_SCALE.map(s => ({ ...s, value: s.value * SCALES.effective_price })),
+  geographic_tax_ratio: RED_SCALE.map(s => ({ ...s, value: s.value * SCALES.geo_tax })),
 
-  // Demographic context (0-1)
-  prop_elderly: UNIFIED_BLUE_SCALE,
+  // === DEMOGRAPHICS ===
+  income_median: GREEN_SCALE.map(s => ({ ...s, value: s.value * SCALES.income })),
+  prop_elderly: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.elderly })), // Elderly concentration
 
-  // Occupation sectors (share of total employed, 0-1)
-  occ_services: UNIFIED_BLUE_SCALE,
-  occ_construction: UNIFIED_BLUE_SCALE,
-  occ_industry: UNIFIED_BLUE_SCALE,
-  occ_agriculture: UNIFIED_BLUE_SCALE,
+  // === EMPLOYMENT SECTORS ===
+  occ_services: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.sector_share })),
+  occ_construction: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.sector_share })),
+  occ_industry: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * SCALES.sector_share })),
+  occ_agriculture: UNIFIED_BLUE_SCALE.map(s => ({ ...s, value: s.value * (SCALES.sector_share * 0.5) })), // Agric is lower
+
+  // === INEQUALITY (Red Scales) ===
+  indicator_elderly_desert: RED_SCALE.map(s => ({ ...s, value: s.value })), // Normalized 0-1 usually
+  indicator_unemployment_trap: RED_SCALE.map(s => ({ ...s, value: s.value * 2000 })), // Needs checking range
+  indicator_education_gap: RED_SCALE.map(s => ({ ...s, value: s.value })),
+  indicator_service_dependency: RED_SCALE.map(s => ({ ...s, value: s.value })),
+  indicator_immigrant_segregation: RED_SCALE.map(s => ({ ...s, value: s.value })),
+  indicator_student_access: RED_SCALE.map(s => ({ ...s, value: s.value })),
+  indicator_worker_commute: RED_SCALE.map(s => ({ ...s, value: s.value })),
 };
 
 interface TimeSlot {
@@ -79,30 +129,44 @@ interface Metric {
 }
 
 const METRICS: Metric[] = [
-  // === INDICADORES DE DESIGUALDAD ===
+  // === ANÁLISIS DE TARIFAS (NUEVO) ===
   {
-    value: 'indicator_unemployment_trap',
-    label: 'Exclusión Laboral',
-    formula: 'Zonas con alto desempleo y baja frecuencia de servicio',
-    group: 'Indicadores de desigualdad'
+    value: 'service_value_index',
+    label: 'Índice del Valor del Servicio (0-1)',
+    formula: 'Calidad objetiva (Frecuencia + Cobertura + Rutas + Cercanía)',
+    group: 'Análisis de Tarifas y Equidad'
   },
   {
-    value: 'indicator_elderly_desert',
-    label: 'Aislamiento de Población Mayor',
-    formula: 'Zonas con alta población 65+ y baja cobertura de paradas',
-    group: 'Indicadores de desigualdad'
+    value: 'effective_price_single',
+    label: 'Precio Efectivo (€/unidad)',
+    formula: 'Coste real por unidad de servicio recibido (1.40€ / Índice)',
+    group: 'Análisis de Tarifas y Equidad'
   },
   {
-    value: 'indicator_education_gap',
-    label: 'Inequidad Educativa',
-    formula: 'Zonas con bajo nivel formativo y mala accesibilidad',
-    group: 'Indicadores de desigualdad'
+    value: 'observable_effective_price_single',
+    label: 'Precio Efectivo Observable (€)',
+    formula: 'Precio Efectivo ajustado al máximo IVS observable en la ciudad. P90 como ancla.',
+    group: 'Análisis de Tarifas y Equidad'
   },
   {
-    value: 'indicator_service_dependency',
-    label: 'Dependencia de Servicios',
-    formula: 'Zonas con alto empleo en servicios y baja frecuencia de guaguas',
-    group: 'Indicadores de desigualdad'
+    value: 'geographic_tax_ratio',
+    label: 'Impuesto geográfico (Ratio)',
+    formula: 'Cuántas veces más caro sale el servicio respecto a una zona ideal',
+    group: 'Análisis de Tarifas y Equidad'
+  },
+
+  // === CONTEXTO SOCIODEMOGRÁFICO ===
+  {
+    value: 'income_median',
+    label: 'Renta Media (Hogares)',
+    formula: 'Renta neta media por unidad de consumo',
+    group: 'Contexto sociodemográfico'
+  },
+  {
+    value: 'prop_elderly',
+    label: 'Población Mayor de 65',
+    formula: 'Proporción de población mayor de 65 años',
+    group: 'Contexto sociodemográfico'
   },
 
   // === MÉTRICAS DE SERVICIO ===
@@ -125,54 +189,10 @@ const METRICS: Metric[] = [
     group: 'Servicio y accesibilidad'
   },
   {
-    value: 'coverage_500_area_pct',
-    label: 'Cobertura a 500m',
-    formula: 'Porcentaje de área a menos de 500m de paradas',
-    group: 'Servicio y accesibilidad'
-  },
-  {
-    value: 'nearest_stop_meters',
-    label: 'Distancia a Parada Más Cercana',
-    formula: 'Distancia desde el centroide de la sección',
-    group: 'Servicio y accesibilidad'
-  },
-  {
     value: 'stops_per_km2',
     label: 'Densidad de Paradas',
     formula: 'Número de paradas por kilómetro cuadrado',
     group: 'Servicio y accesibilidad'
-  },
-
-  // === CONTEXTO SOCIODEMOGRÁFICO ===
-  {
-    value: 'prop_elderly',
-    label: 'Población Mayor de 65',
-    formula: 'Proporción de población mayor de 65 años',
-    group: 'Contexto sociodemográfico'
-  },
-  {
-    value: 'occ_services',
-    label: 'Empleo en Servicios',
-    formula: 'Proporción de empleo en el sector servicios',
-    group: 'Contexto sociodemográfico'
-  },
-  {
-    value: 'occ_construction',
-    label: 'Empleo en Construcción',
-    formula: 'Proporción de empleo en construcción',
-    group: 'Contexto sociodemográfico'
-  },
-  {
-    value: 'occ_industry',
-    label: 'Empleo en Industria',
-    formula: 'Proporción de empleo en industria',
-    group: 'Contexto sociodemográfico'
-  },
-  {
-    value: 'occ_agriculture',
-    label: 'Empleo en Agricultura',
-    formula: 'Proporción de empleo en agricultura',
-    group: 'Contexto sociodemográfico'
   },
 ];
 
@@ -186,18 +206,26 @@ export default function MapView() {
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
   const [timeSlot, setTimeSlot] = useState('all_day');
   const [metric, setMetric] = useState('stop_time_events_all_day');
-  const [showStops, setShowStops] = useState(true);
-  const [showSections, setShowSections] = useState(true);
+  const [showStops, setShowStops] = useState(false);
+  const [showSections, setShowSections] = useState(false);
   const [showShapes, setShowShapes] = useState(false);
   const [showTourism, setShowTourism] = useState(false);
-  const [densityLayer, setDensityLayer] = useState('population');
+  const [densityLayer, setDensityLayer] = useState('none');
+  const [contextMetric, setContextMetric] = useState('none');
+
+  // Opacity Control States
+  const [sectionsOpacity, setSectionsOpacity] = useState(0.6);
+  const [contextOpacity, setContextOpacity] = useState(0.5);
+  const [densityOpacity, setDensityOpacity] = useState(0.6);
+
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [tourismData, setTourismData] = useState<any>(null);
 
   useEffect(() => {
     loadSections();
     loadStops();
     loadShapes();
-    loadGrid('population');
+    loadTourism();
   }, []);
 
   // Reload grid when densityLayer changes
@@ -253,6 +281,11 @@ export default function MapView() {
     setShapesData(data);
   };
 
+  const loadTourism = async () => {
+    const data = await fetchGeoJson('/api/tourist-spots', 'tourist spots');
+    setTourismData(data);
+  };
+
   const getMetricKey = () => {
     if (metric === 'stop_time_events_all_day' || metric === 'unique_routes_all_day') {
       // For service metrics, append time slot suffix
@@ -262,30 +295,72 @@ export default function MapView() {
     return metric;
   };
 
-  const sectionsLayer = useMemo<FillLayer>(() => {
+  // Dynamic Layer Construction (Fill)
+  const sectionsLayer = useMemo<any>(() => {
     const metricKey = getMetricKey();
     const scale = COLOR_SCALES[metricKey as keyof typeof COLOR_SCALES] || COLOR_SCALES[metric as keyof typeof COLOR_SCALES] || COLOR_SCALES.stop_time_events_all_day;
 
-    const expression: any[] = ['interpolate', ['linear'], ['get', metricKey]];
-
+    const colorExpression: any[] = ['interpolate', ['linear'], ['get', metricKey]];
     scale.forEach(({ value, color }) => {
-      expression.push(value, color);
+      colorExpression.push(value, color);
     });
 
     return {
       id: 'sections-fill',
       type: 'fill',
+      source: 'sections-source',
       layout: {
         visibility: showSections ? 'visible' : 'none'
       },
       paint: {
-        'fill-color': expression,
-        'fill-opacity': 0.6,
+        'fill-color': colorExpression as any,
+        'fill-opacity': sectionsOpacity,
       },
       minzoom: 0,
       maxzoom: 24,
     };
-  }, [metric, timeSlot, showSections]);
+  }, [metric, timeSlot, showSections, sectionsOpacity]);
+
+  // Context Layer (Bubbles/Label)
+
+  const contextLayer = useMemo<any>(() => {
+    if (contextMetric === 'none') return null;
+
+    let radiusExpression: any = ['interpolate', ['linear'], ['get', contextMetric]];
+
+    // Adjusted scales for visibility
+    if (contextMetric === 'income_median') {
+      // Income: 10k (3px) -> 35k (20px)
+      radiusExpression.push(10000, 3, 35000, 20);
+    } else if (contextMetric === 'prop_elderly') {
+      // Elderly: 5% (2px) -> 35% (25px) - Highlight concentrations well
+      radiusExpression.push(0.05, 2, 0.35, 25);
+    } else if (contextMetric === 'occ_services' || contextMetric === 'occ_construction') {
+      // Employment: 10% (3px) -> 50% (20px)
+      radiusExpression.push(0.10, 3, 0.50, 20);
+    } else {
+      // Default Normalized (0-1): 0 (2px) -> 1 (20px)
+      radiusExpression.push(0, 2, 1, 20);
+    }
+
+    return {
+      id: 'sections-context-circle',
+      type: 'circle',
+      source: 'sections-source',
+      layout: {
+        'visibility': showSections ? 'visible' : 'none',
+      },
+      paint: {
+        'circle-radius': radiusExpression,
+        'circle-color': '#000000',
+        'circle-opacity': contextOpacity * 0.1, // Almost transparent fill to avoid clutter
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-opacity': contextOpacity // Stroke remains visible
+      },
+      minzoom: 10 // Visible sooner
+    };
+  }, [contextMetric, showSections, contextOpacity]);
 
   const sectionsOutlineLayer: any = {
     id: 'sections-outline',
@@ -301,20 +376,20 @@ export default function MapView() {
   };
 
   const getGridLayerColor = () => {
-    // All density layers use black
-    return '#000000';
+    return '#e74c3c';
   };
 
   const gridLayer: CircleLayer = {
     id: 'grid-population',
     type: 'circle',
+    source: 'grid-source',
     layout: {
       visibility: densityLayer !== 'none' ? 'visible' : 'none'
     },
     paint: {
       'circle-color': getGridLayerColor(),
       'circle-radius': 1.5,
-      'circle-opacity': 0.5,
+      'circle-opacity': densityOpacity,
       'circle-stroke-width': 0
     }
   };
@@ -322,6 +397,7 @@ export default function MapView() {
   const stopsLayer: CircleLayer = {
     id: 'stops',
     type: 'circle',
+    source: 'stops-source',
     layout: {
       visibility: showStops ? 'visible' : 'none'
     },
@@ -354,17 +430,17 @@ export default function MapView() {
 
     const feature = features[0];
 
-    if (feature.layer.id === 'stops') {
+    if (feature.layer?.id === 'stops') {
       setSelectedStop(feature.properties?.stop_id);
       setSelectedSection(null);
-    } else if (feature.layer.id === 'sections-fill') {
+    } else if (feature.layer?.id === 'sections-fill') {
       setSelectedSection(feature.properties?.section_code);
       setSelectedStop(null);
     }
   };
 
   return (
-    <div className="map-container">
+    <div className="map-container" >
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
@@ -382,13 +458,10 @@ export default function MapView() {
         {sectionsData && (
           <Source id="sections-source" type="geojson" data={sectionsData}>
             <Layer {...sectionsLayer} />
-          </Source>
-        )}
-
-        {/* Layer 2: Census Sections Outline (on top of fill) */}
-        {sectionsData && (
-          <Source id="sections-outline-source" type="geojson" data={sectionsData}>
+            {/* Outline on top of fill */}
             <Layer {...sectionsOutlineLayer} />
+            {/* Bubble/Symbol Layer on top of everything section-related */}
+            {contextLayer && <Layer {...contextLayer} />}
           </Source>
         )}
 
@@ -407,59 +480,25 @@ export default function MapView() {
         )}
 
         {/* Layer 5: Tourist Establishments (WMS) - Above density, below stops */}
-        {showTourism && (
-          <>
-            <Source
-              id="tourism-hotels-source"
-              type="raster"
-              tiles={[
-                `https://idecan2.grafcan.es/ServicioWMS/EstablecimientosTuristicos?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=ALOJATIVOS_HOTELERO&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true`
-              ]}
-              tileSize={256}
-              bounds={[-15.527, 28.024, -15.396, 28.181]}
-            >
-              <Layer
-                id="tourism-hotels"
-                type="raster"
-                minzoom={11}
-                paint={{ 'raster-opacity': 0.7 }}
-              />
-            </Source>
-
-            <Source
-              id="tourism-restaurants-source"
-              type="raster"
-              tiles={[
-                `https://idecan2.grafcan.es/ServicioWMS/EstablecimientosTuristicos?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=RESTAURACION&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true`
-              ]}
-              tileSize={256}
-              bounds={[-15.527, 28.024, -15.396, 28.181]}
-            >
-              <Layer
-                id="tourism-restaurants"
-                type="raster"
-                minzoom={11}
-                paint={{ 'raster-opacity': 0.7 }}
-              />
-            </Source>
-
-            <Source
-              id="tourism-vacation-source"
-              type="raster"
-              tiles={[
-                `https://idecan2.grafcan.es/ServicioWMS/EstablecimientosTuristicos?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=ALOJATIVOS_EXTRAHOTELERO_VV&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true`
-              ]}
-              tileSize={256}
-              bounds={[-15.527, 28.024, -15.396, 28.181]}
-            >
-              <Layer
-                id="tourism-vacation"
-                type="raster"
-                minzoom={11}
-                paint={{ 'raster-opacity': 0.7 }}
-              />
-            </Source>
-          </>
+        {/* Layer 5: Tourist Establishments (Vector) - Above density, below stops */}
+        {tourismData && showTourism && (
+          <Source id="tourism-source" type="geojson" data={tourismData}>
+            <Layer
+              id="tourism-spots"
+              type="circle"
+              paint={{
+                'circle-radius': [
+                  'interpolate', ['linear'], ['zoom'],
+                  12, 3, // Zoom 12 -> 3px
+                  15, ['match', ['get', 'type'], 'Hotel', 10, 'Vivienda Vacacional', 6, 6] // Zoom 15 -> Hoteles grandes, VV medianas
+                ],
+                'circle-color': ['get', 'color'],
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff',
+                'circle-opacity': 0.8
+              }}
+            />
+          </Source>
         )}
 
         {/* Layer 6 (Top): Stops - ALWAYS on top */}
@@ -478,6 +517,7 @@ export default function MapView() {
         showShapes={showShapes}
         showTourism={showTourism}
         densityLayer={densityLayer}
+        contextMetric={contextMetric}
         onTimeSlotChange={setTimeSlot}
         onMetricChange={setMetric}
         onShowStopsChange={setShowStops}
@@ -485,6 +525,13 @@ export default function MapView() {
         onShowShapesChange={setShowShapes}
         onShowTourismChange={setShowTourism}
         onDensityLayerChange={setDensityLayer}
+        onContextMetricChange={setContextMetric}
+        sectionsOpacity={sectionsOpacity}
+        onSectionsOpacityChange={setSectionsOpacity}
+        contextOpacity={contextOpacity}
+        onContextOpacityChange={setContextOpacity}
+        densityOpacity={densityOpacity}
+        onDensityOpacityChange={setDensityOpacity}
         timeSlots={TIME_SLOTS}
         metrics={METRICS}
       />

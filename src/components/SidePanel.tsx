@@ -31,6 +31,8 @@ export default function SidePanel({
   const [sectionData, setSectionData] = useState<any>(null);
   const [stopData, setStopData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [isTopRoutesOpen, setIsTopRoutesOpen] = useState(false);
+  const [isSectionStopsOpen, setIsSectionStopsOpen] = useState(false);
   useEffect(() => {
     if (selectedSection) {
       loadSectionData(selectedSection);
@@ -109,14 +111,14 @@ export default function SidePanel({
               o en una <strong>parada</strong> para ver sus detalles y líneas.
             </p>
             <div style={{ marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>📊 Sobre las métricas</h3>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Sobre las métricas</h3>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
                 Todas las métricas se calculan a partir de datos GTFS reales y secciones censales del INE.
                 Cada métrica tiene una fórmula transparente y verificable.
               </p>
             </div>
             <div style={{ marginTop: '15px', padding: '15px', background: '#fff7e6', borderRadius: '8px' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>ℹ️ Alcance del análisis</h3>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Alcance del análisis</h3>
               <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
                 Este análisis no incluye datos de aforo, validaciones ni puntualidad porque Guaguas
                 Municipales y Las Palmas de Gran Canaria publican pocas o ninguna de estas mediciones en
@@ -131,147 +133,215 @@ export default function SidePanel({
           </div>
         </div>
       )}
-      {!loading && sectionData && (
+      {!loading && sectionData && sectionData.section && (
         <div>
           <div className="panel-header">
             <h2>Sección Censal</h2>
             <p className="subtitle">{sectionData.section.section_code}</p>
           </div>
           <div className="panel-content">
-            <div className="metric-card">
-              <h3>Nombre</h3>
-              <div className="value" style={{ fontSize: '1.2rem' }}>
-                {sectionData.section.name || 'Sin nombre'}
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px', fontSize: '0.9rem' }}>
+              <div style={{ marginBottom: '5px' }}>
+                <strong>Nombre:</strong> {sectionData.section.name || 'Sin nombre'}
+              </div>
+              <div>
+                <strong>Área:</strong> {sectionData.section.area_km2?.toFixed(3)} km²
               </div>
             </div>
-            <div className="metric-card">
-              <h3>Área</h3>
-              <div className="value">{sectionData.section.area_km2?.toFixed(3)} km²</div>
-            </div>
+
             <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-              Métricas Básicas
+              Paradas
             </h3>
             <div className="metric-card">
               <h3>Paradas en la Sección</h3>
               <div className="value">{sectionData.section.stops_count || 0}</div>
-              <div className="formula">{METRIC_FORMULAS.stops_count}</div>
             </div>
-            <div className="metric-card">
-              <h3>Densidad de Paradas</h3>
-              <div className="value">
-                {(sectionData.section.stops_per_km2 || 0).toFixed(2)} paradas/km²
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px', padding: '0 5px' }}>
+              <div style={{ fontSize: '0.85rem' }}>
+                <div style={{ color: '#666', fontWeight: 600 }}>Densidad</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{(sectionData.section.stops_per_km2 || 0).toFixed(1)} <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>p/km²</span></div>
               </div>
-              <div className="formula">{METRIC_FORMULAS.stops_per_km2}</div>
+              <div style={{ fontSize: '0.85rem' }}>
+                <div style={{ color: '#666', fontWeight: 600 }}>Cercanía</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{(sectionData.section.nearest_stop_meters || 0).toFixed(0)} <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>m</span></div>
+                <div style={{ fontSize: '0.7rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sectionData.section.nearest_stop_name}</div>
+              </div>
+              <div style={{ fontSize: '0.85rem' }}>
+                <div style={{ color: '#666', fontWeight: 600 }}>Cobertura 300m</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{(sectionData.section.coverage_300_area_pct || 0).toFixed(1)}%</div>
+              </div>
+              <div style={{ fontSize: '0.85rem' }}>
+                <div style={{ color: '#666', fontWeight: 600 }}>Cobertura 500m</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{(sectionData.section.coverage_500_area_pct || 0).toFixed(1)}%</div>
+              </div>
             </div>
-            <div className="metric-card">
-              <h3>Parada Más Cercana</h3>
-              <div className="value">
-                {(sectionData.section.nearest_stop_meters || 0).toFixed(0)} metros
+            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
+              <h4 style={{ marginBottom: '15px', color: '#2c3e50', fontSize: '1rem' }}>
+                Servicio: {getTimeSlotLabel()}
+              </h4>
+              <div className="metric-card">
+                <h3>Eventos de Servicio</h3>
+                <div className="value">
+                  {getMetricValue(sectionData.section, 'stop_time_events_all_day', timeSlot) || 0}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Un evento es cada paso individual de un guagua por cualquier parada de esta sección durante la franja horaria.
+                </div>
               </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
-                {sectionData.section.nearest_stop_name}
+              <div className="metric-card">
+                <h3>Líneas Únicas</h3>
+                <div className="value">
+                  {getMetricValue(sectionData.section, 'unique_routes_all_day', timeSlot) || 0}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Representa el número de rutas distintas (ej. Línea 1, Línea 12) que dan servicio a este barrio.
+                </div>
               </div>
-              <div className="formula">{METRIC_FORMULAS.nearest_stop_meters}</div>
+
+              {/* Collapsible Top Routes */}
+              {sectionData.topRoutes[timeSlot] && sectionData.topRoutes[timeSlot].length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <button
+                    onClick={() => setIsTopRoutesOpen(!isTopRoutesOpen)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#f8f9fa',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#2c3e50'
+                    }}
+                  >
+                    <span>{isTopRoutesOpen ? '▼' : '▶'} Top Líneas</span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>{sectionData.topRoutes[timeSlot].length} líneas</span>
+                  </button>
+                  {isTopRoutesOpen && (
+                    <ul className="route-list" style={{ marginTop: '10px', maxHeight: '250px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '6px', padding: '10px' }}>
+                      {sectionData.topRoutes[timeSlot].slice(0, 20).map((route: any, i: number) => (
+                        <li key={i} className="route-item" style={{ fontSize: '0.85rem' }}>
+                          <div>
+                            <span className="route-badge">{route.route_short_name}</span>
+                            <span className="route-name">{route.route_long_name}</span>
+                          </div>
+                          <span className="route-events" style={{ fontSize: '0.75rem' }}>{route.stop_time_events} ev.</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {/* Collapsible Stops List */}
+              {sectionData.stops && sectionData.stops.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <button
+                    onClick={() => setIsSectionStopsOpen(!isSectionStopsOpen)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#f8f9fa',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#2c3e50'
+                    }}
+                  >
+                    <span>{isSectionStopsOpen ? '▼' : '▶'} Lista de Paradas</span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>{sectionData.stops.length} paradas</span>
+                  </button>
+                  {isSectionStopsOpen && (
+                    <div className="stops-list" style={{ marginTop: '10px', maxHeight: '200px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '6px', padding: '10px' }}>
+                      {sectionData.stops.map((stop: any) => (
+                        <div key={stop.stop_id} className="stop-item" style={{ fontSize: '0.8rem', padding: '5px 0' }}>
+                          {stop.stop_name} <span style={{ color: '#999', fontSize: '0.7rem' }}>({stop.stop_id})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="metric-card">
-              <h3>Cobertura 300m</h3>
-              <div className="value">
-                {(sectionData.section.coverage_300_area_pct || 0).toFixed(1)}%
+            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
+              <h4 style={{ marginBottom: '15px', color: '#2c3e50', fontSize: '1rem' }}>
+                Equidad y Tarifas
+              </h4>
+              <div className="metric-card">
+                <h3>Índice de Calidad</h3>
+                <div className="value">
+                  {(sectionData.section.service_value_index || 0).toFixed(3)}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Calidad objetiva del servicio basada en frecuencia, cobertura y diversidad de rutas (0 a 1).
+                </div>
               </div>
-              <div className="formula">{METRIC_FORMULAS.coverage_300_area_pct}</div>
-            </div>
-            <div className="metric-card">
-              <h3>Cobertura 500m</h3>
-              <div className="value">
-                {(sectionData.section.coverage_500_area_pct || 0).toFixed(1)}%
+              <div className="metric-card">
+                <h3>Precio Efectivo</h3>
+                <div className="value">
+                  {(sectionData.section.effective_price_single || 0).toFixed(2)}€
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Coste real por unidad de utilidad recibida (basado en billete simple de 1.40€).
+                </div>
               </div>
-              <div className="formula">{METRIC_FORMULAS.coverage_500_area_pct}</div>
+              <div className="metric-card">
+                <h3>"Impuesto" Geográfico</h3>
+                <div className="value">
+                  {(sectionData.section.geographic_tax_ratio || 0).toFixed(1)}x
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Factor de sobrecoste respecto a las zonas mejor servidas de la ciudad.
+                </div>
+              </div>
             </div>
-            <h3 style={{ marginTop: '25px', marginBottom: '15px', color: '#2c3e50', borderBottom: '2px solid #FDB913', paddingBottom: '8px' }}>
-              Indicadores de Desigualdad
+
+            <h3 style={{ marginTop: '30px', marginBottom: '15px', color: '#2c3e50', borderBottom: '2px solid #FDB913', paddingBottom: '8px' }}>
+              Indicadores
             </h3>
             <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px', lineHeight: '1.5' }}>
-              Índices que combinan variables socioeconómicas con accesibilidad al transporte público.
+              Relación entre vulnerabilidad social, turismo y calidad del transporte.
             </div>
+
             <div className="metric-card">
-              <h3>Exclusión Laboral</h3>
+              <h3>Presión Turística</h3>
               <div className="value">
-                {((sectionData.section.indicator_unemployment_trap || 0) * 100).toFixed(0)}%
+                {(sectionData.section.tourist_density || 0).toFixed(0)} <span style={{ fontSize: '1rem', fontWeight: 400 }}>plazas/km²</span>
               </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
-                Alto desempleo combinado con baja frecuencia de servicio
+              <div style={{ fontSize: '0.85rem', marginTop: '8px', color: '#555' }}>
+                {(sectionData.section.tourist_places_count || 0).toLocaleString()} plazas totales en la sección.
               </div>
-              <div className="formula">{METRIC_FORMULAS.indicator_unemployment_trap}</div>
             </div>
+
             <div className="metric-card">
-              <h3>Aislamiento de Población Mayor</h3>
+              <h3>Desierto de Mayores</h3>
               <div className="value">
                 {((sectionData.section.indicator_elderly_desert || 0) * 100).toFixed(0)}%
               </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
-                Alta población 65+ combinada con baja cobertura de paradas
+              <div style={{ fontSize: '0.85rem', marginTop: '8px', color: '#555', fontStyle: 'italic' }}>
+                Identifica zonas con alta densidad de personas mayores y baja cobertura de paradas, señalando puntos críticos de aislamiento poblacional.
               </div>
-              <div className="formula">{METRIC_FORMULAS.indicator_elderly_desert}</div>
             </div>
+
             <div className="metric-card">
-              <h3>Inequidad Educativa</h3>
+              <h3>Desconexión Laboral</h3>
               <div className="value">
-                {((sectionData.section.indicator_education_gap || 0) * 100).toFixed(0)}%
+                {((sectionData.section.indicator_worker_commute || 0) * 100).toFixed(0)}%
               </div>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px', color: '#555' }}>
-                Bajo nivel formativo combinado con mala accesibilidad
+              <div style={{ fontSize: '0.85rem', marginTop: '8px', color: '#555', fontStyle: 'italic' }}>
+                Muestra la brecha entre las zonas de residencia de la clase trabajadora y el acceso a una red de transporte con frecuencias competitivas.
               </div>
-              <div className="formula">{METRIC_FORMULAS.indicator_education_gap}</div>
             </div>
-            <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-              Servicio: {getTimeSlotLabel()}
-            </h3>
-            <div className="metric-card">
-              <h3>Eventos de Servicio</h3>
-              <div className="value">
-                {getMetricValue(sectionData.section, 'stop_time_events_all_day', timeSlot) || 0}
-              </div>
-              <div className="formula">{METRIC_FORMULAS.stop_time_events}</div>
-            </div>
-            <div className="metric-card">
-              <h3>Líneas Únicas</h3>
-              <div className="value">
-                {getMetricValue(sectionData.section, 'unique_routes_all_day', timeSlot) || 0}
-              </div>
-              <div className="formula">{METRIC_FORMULAS.unique_routes}</div>
-            </div>
-            {sectionData.topRoutes[timeSlot] && sectionData.topRoutes[timeSlot].length > 0 && (
-              <>
-                <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-                  Top Líneas
-                </h3>
-                <ul className="route-list">
-                  {sectionData.topRoutes[timeSlot].slice(0, 10).map((route: any, i: number) => (
-                    <li key={i} className="route-item">
-                      <div>
-                        <span className="route-badge">{route.route_short_name}</span>
-                        <span className="route-name">{route.route_long_name}</span>
-                      </div>
-                      <span className="route-events">{route.stop_time_events} eventos</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            {sectionData.stops && sectionData.stops.length > 0 && (
-              <>
-                <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-                  Paradas ({sectionData.stops.length})
-                </h3>
-                <div className="stops-list">
-                  {sectionData.stops.map((stop: any) => (
-                    <div key={stop.stop_id} className="stop-item">
-                      {stop.stop_name}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         </div>
       )}
@@ -282,33 +352,20 @@ export default function SidePanel({
             <p className="subtitle">{stopData.stop.stop_name}</p>
           </div>
           <div className="panel-content">
-            <div className="metric-card">
-              <h3>ID de Parada</h3>
-              <div className="value" style={{ fontSize: '1.2rem' }}>{stopData.stop.stop_id}</div>
-            </div>
-            {stopData.stop.section_name && (
-              <div className="metric-card">
-                <h3>Sección Censal</h3>
-                <div className="value" style={{ fontSize: '1rem' }}>
-                  {stopData.stop.section_name}
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '5px' }}>
-                  {stopData.stop.section_code}
-                </div>
-              </div>
-            )}
-            <div className="metric-card">
-              <h3>Coordenadas</h3>
-              <div style={{ fontSize: '0.9rem', color: '#555' }}>
-                Lat: {stopData.stop.stop_lat?.toFixed(6)}
-                <br />
-                Lon: {stopData.stop.stop_lon?.toFixed(6)}
-              </div>
-            </div>
             {stopData.routes && stopData.routes.length > 0 && (
               <>
+                <div className="metric-card">
+                  <h3>Total Eventos de Servicio (Día)</h3>
+                  <div className="value">
+                    {stopData.routes.reduce((acc: number, curr: any) => acc + (parseInt(curr.trip_count) || 0), 0)}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                    Suma total de pasos de guagua por esta parada en un día laborable tipo.
+                  </div>
+                </div>
+
                 <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-                  Líneas que pasan ({stopData.routes.length})
+                  Líneas ({stopData.routes.length})
                 </h3>
                 <ul className="route-list">
                   {stopData.routes.map((route: any) => (
@@ -321,25 +378,6 @@ export default function SidePanel({
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
-            {stopData.stopTimes && stopData.stopTimes.length > 0 && (
-              <>
-                <h3 style={{ marginTop: '20px', marginBottom: '15px', color: '#2c3e50' }}>
-                  Horarios de Ejemplo (primeros 20)
-                </h3>
-                <div style={{ fontSize: '0.75rem', maxHeight: '300px', overflowY: 'auto' }}>
-                  {stopData.stopTimes.map((st: any, i: number) => (
-                    <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                      <div style={{ fontWeight: 'bold', color: '#2c3e50' }}>
-                        {st.arrival_time} - Línea {st.route_short_name}
-                      </div>
-                      <div style={{ color: '#666', marginTop: '2px' }}>
-                        {st.trip_headsign || st.route_long_name}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </>
             )}
           </div>

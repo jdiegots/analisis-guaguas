@@ -1,0 +1,202 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import './tarifas.css';
+import './tarifas-extra.css';
+
+interface Fare {
+  name: string;
+  type: string;
+  price_euros: number;
+  trips_included: number;
+  validity_days: number;
+  cost_per_trip: number | null;
+  requirements: string;
+  target_group: string;
+  is_social_fare: boolean;
+}
+
+interface FareAnalysisStats {
+  summary: {
+    avg_unemployment: number;
+    avg_elderly_prop: number;
+    avg_low_education: number;
+    avg_working_class: number;
+    avg_services_share: number;
+    total_sections: number;
+    median_coverage_300: number;
+    median_nearest_stop: number;
+  };
+  bus: {
+    avg_stops_count: number;
+    avg_stops_density: number;
+    avg_nearest_stop_dist: number;
+    avg_coverage_300: number;
+    avg_coverage_500: number;
+    avg_freq_day: number;
+    avg_freq_morning: number;
+    avg_freq_midday: number;
+    avg_freq_afternoon: number;
+    avg_freq_night: number;
+  };
+  contrasts: Array<{
+    key: string;
+    label: string;
+    unit: '%' | 'ratio';
+    description: string;
+    thresholds: { p25: number; p75: number };
+    sections: { high: number; low: number };
+    averages: {
+      high_value: number;
+      low_value: number;
+      high_coverage_300: number;
+      low_coverage_300: number;
+      high_coverage_500: number;
+      low_coverage_500: number;
+      high_nearest_stop: number;
+      low_nearest_stop: number;
+      high_stops_count: number;
+      low_stops_count: number;
+      high_stops_density: number;
+      low_stops_density: number;
+      high_freq_day: number;
+      low_freq_day: number;
+      high_penalty: number;
+      low_penalty: number;
+    };
+    gaps: {
+      coverage_300: number;
+      coverage_500: number;
+      nearest_stop: number;
+      stops_density: number;
+      stops_count: number;
+      freq_day: number;
+      penalty_index: number;
+    };
+    correlations: {
+      coverage_300: number;
+      coverage_500: number;
+      nearest_stop: number;
+      stops_density: number;
+      freq_day: number;
+    };
+  }>;
+}
+
+function formatPercent(value: number, digits: number = 1): string {
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
+export default function AnalisisTarifas() {
+  const [fares, setFares] = useState<Fare[]>([]);
+  const [stats, setStats] = useState<FareAnalysisStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      const faresRes = await fetch('/api/fares');
+      const faresData = await faresRes.json();
+      setFares(faresData);
+
+      const statsRes = await fetch('/api/fare-analysis');
+      const statsData = await statsRes.json();
+      setStats(statsData);
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="loading">Cargando analisis de equidad tarifaria...</div>;
+  }
+
+  const avgCostGeneral = fares
+    .filter(f => !f.is_social_fare && f.cost_per_trip)
+    .reduce((sum, f) => sum + (f.cost_per_trip || 0), 0) / (fares.filter(f => !f.is_social_fare && f.cost_per_trip).length || 1);
+
+  const avgCostSocial = fares
+    .filter(f => f.is_social_fare && f.cost_per_trip)
+    .reduce((sum, f) => sum + (f.cost_per_trip || 0), 0) / (fares.filter(f => f.is_social_fare && f.cost_per_trip).length || 1);
+
+  const bonoSolidario = fares.find(f => f.name.includes('Bono Solidario') && !f.name.includes('Compartido'));
+  const unemploymentContrast = stats?.contrasts.find(c => c.key === 'unemployment');
+
+  return (
+    <div className="analisis-container">
+      <header className="analisis-header">
+        <h1>A quien benefician realmente las tarifas de Guaguas?</h1>
+        <p>Analisis de justicia tarifaria en el transporte publico de Las Palmas de Gran Canaria</p>
+        <a href="/" className="back-link">Volver al mapa</a>
+      </header>
+
+      <div className="content">
+        <section className="card question">
+          <h2>1. Quien paga mas por moverse en guagua?</h2>
+          <div className="answer">
+            <div className="answer-highlight">
+              <div className="big-number">€{avgCostGeneral.toFixed(3)}</div>
+              <div className="big-label">Coste medio tarifa general</div>
+            </div>
+            <div className="answer-highlight">
+              <div className="big-number">€{avgCostSocial.toFixed(3)}</div>
+              <div className="big-label">Coste medio tarifa social</div>
+            </div>
+            <div className="answer-highlight critical">
+              <div className="big-number">{((avgCostGeneral / avgCostSocial - 1) * 100).toFixed(0)}%</div>
+              <div className="big-label">mas caro sin bono social</div>
+            </div>
+          </div>
+          <div className="verdict">
+            <strong>Veredicto:</strong> Una persona sin acceso a bonos sociales paga {((avgCostGeneral / avgCostSocial)).toFixed(1)}x mas por viaje.
+          </div>
+        </section>
+
+        <section className="card question critical">
+          <h2>2. Los desempleados tienen acceso al Bono Solidario cuando mas lo necesitan?</h2>
+          {bonoSolidario && unemploymentContrast && (
+            <>
+              <div className="answer">
+                <div className="barrier">
+                  <h3>Barrera burocratica</h3>
+                  <p><strong>Requisito:</strong> {bonoSolidario.requirements}</p>
+                  <p className="impact">
+                    <strong>Impacto:</strong> Si quedas desempleado hoy, debes esperar 6 meses para acceder al bono.
+                  </p>
+                </div>
+                <div className="service-gap">
+                  <h3>Brecha de servicio en zonas con alto desempleo</h3>
+                  <p>
+                    Las {unemploymentContrast.sections.high} secciones con mas desempleo ({formatPercent(unemploymentContrast.averages.high_value)} de paro) tienen:
+                  </p>
+                  <ul>
+                    <li><strong>{unemploymentContrast.averages.high_coverage_300.toFixed(1)}% cobertura 300m</strong> vs {unemploymentContrast.averages.low_coverage_300.toFixed(1)}%</li>
+                    <li><strong>{unemploymentContrast.averages.high_nearest_stop.toFixed(0)}m a parada mas cercana</strong> vs {unemploymentContrast.averages.low_nearest_stop.toFixed(0)}m</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="verdict critical">
+                <strong>Veredicto:</strong> DOBLE CASTIGO para los desempleados.
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="card summary">
+          <h2>Metodologia</h2>
+          <p>Datos de Guaguas Municipales 2025, Censo INE 2023, y GTFS actualizado.</p>
+        </section>
+      </div>
+
+      <footer className="analisis-footer">
+        <p>Analisis de equidad tarifaria - Datos publicos oficiales - {new Date().getFullYear()}</p>
+      </footer>
+    </div>
+  );
+}

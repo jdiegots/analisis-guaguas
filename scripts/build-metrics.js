@@ -22,7 +22,7 @@ async function getActiveServices() {
     parseInt(REFERENCE_DATE.substr(6, 2))
   );
   const dayOfWeek = refDate.getDay();
-  const dayNames = ['sunday', 'saturday', 'friday', 'thursday', 'wednesday', 'tuesday', 'monday'];
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const dayColumn = dayNames[dayOfWeek];
 
   console.log(`  Day of week: ${dayColumn}`);

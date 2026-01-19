@@ -54,26 +54,9 @@ export async function GET(
       ORDER BY r.route_short_name
     `, [id]);
 
-    // Get sample stop times (next 10 arrivals from a typical day)
-    const stopTimes = await db.manyOrNone(`
-      SELECT
-        st.arrival_time,
-        st.departure_time,
-        r.route_short_name,
-        r.route_long_name,
-        t.trip_headsign
-      FROM stop_times st
-      INNER JOIN trips t ON st.trip_id = t.trip_id
-      INNER JOIN routes r ON t.route_id = r.route_id
-      WHERE st.stop_id = $1
-      ORDER BY st.arrival_time
-      LIMIT 20
-    `, [id]);
-
     return NextResponse.json({
       stop,
       routes,
-      stopTimes,
     });
   } catch (error) {
     console.error('Error fetching stop details:', error);

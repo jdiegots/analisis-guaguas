@@ -41,12 +41,31 @@ export async function GET(request: NextRequest) {
         COALESCE(sm.indicator_unemployment_trap, 0) as indicator_unemployment_trap,
         COALESCE(sm.indicator_elderly_desert, 0) as indicator_elderly_desert,
         COALESCE(sm.indicator_service_dependency, 0) as indicator_service_dependency,
+        COALESCE(sm.indicator_student_access, 0) as indicator_student_access,
+        COALESCE(sm.indicator_immigrant_segregation, 0) as indicator_immigrant_segregation,
+        COALESCE(sm.indicator_worker_commute, 0) as indicator_worker_commute,
         COALESCE(sm.occ_services, 0) as occ_services,
         COALESCE(sm.occ_construction, 0) as occ_construction,
         COALESCE(sm.occ_industry, 0) as occ_industry,
-        COALESCE(sm.occ_agriculture, 0) as occ_agriculture
+        COALESCE(sm.occ_agriculture, 0) as occ_agriculture,
+        
+        -- Advanced Fare/Service Metrics
+        COALESCE(sm.service_value_index, 0) as service_value_index,
+        COALESCE(sm.service_percentile, 0) as service_percentile,
+        COALESCE(sm.income_median, 0) as income_median,
+        COALESCE(sm.prop_elderly, 0) as prop_elderly,
+        
+        -- Calculated Fields for Frontend (Effective Price & Tax)
+        -- Nominal price is constant (1.40), so we can compute ratios here or in frontend.
+        -- We'll provide the raw service index so frontend can do user-selected fare math.
+        CASE 
+          WHEN sm.service_value_index > 0 THEN 1.40 / sm.service_value_index 
+          ELSE 0 
+        END as effective_price_single
+
       FROM census_sections cs
       LEFT JOIN section_metrics sm ON cs.section_code = sm.section_code
+      WHERE sm.stops_count > 0
       ORDER BY cs.section_code
     `);
 
@@ -84,11 +103,20 @@ export async function GET(request: NextRequest) {
           indicator_unemployment_trap: section.indicator_unemployment_trap,
           indicator_elderly_desert: section.indicator_elderly_desert,
           indicator_service_dependency: section.indicator_service_dependency,
+          indicator_student_access: section.indicator_student_access,
+          indicator_immigrant_segregation: section.indicator_immigrant_segregation,
+          indicator_worker_commute: section.indicator_worker_commute,
           // Sectors
           occ_services: section.occ_services,
           occ_construction: section.occ_construction,
           occ_industry: section.occ_industry,
           occ_agriculture: section.occ_agriculture,
+
+          // Advanced Analysis
+          service_value_index: section.service_value_index,
+          service_percentile: section.service_percentile,
+          effective_price_single: section.effective_price_single,
+          geographic_tax_ratio: section.service_value_index > 0 ? (1.0 / section.service_value_index) : 0, // Simplified tax calculation
         },
       })),
     };
